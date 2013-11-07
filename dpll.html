@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SAT Solver</title>
+	<link href="dpll.css" media="all" rel="stylesheet" type="text/css" />
+	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="dpll.js"></script>
+</head>
+<body>
+	<h1>SAT Solver</h1>
+	<p>
+	Enter a series of clauses (one for each line):
+	<p>
+	<textarea id="problemTxt"></textarea>
+	<p>
+	<input id="solveBtn" type="submit" value="Solve">
+	<p>
+	<strong>Elapsed time:</strong> <span id="elapsedTxt">-</span> ms
+	<p>
+	<strong>Solution:</strong>
+	<p>
+	<tt id="solutionTxt"></tt>
+	<div id="graph"></div>
+
+	<script>
+	function $(id) {
+		return document.getElementById(id);
+	}
+	
+	function getClauses(txt, varsDict) {
+		var clausesLines = $('problemTxt').value.split('\n');
+		var clauses = [];
+		var varCounter = 1;
+		var revVarsDict = {}; // var name -> var num
+		for (var i = 0; i < clausesLines.length; i++) {
+			if (!clausesLines[i]) {
+				continue;
+			}
+			var newClause = [];
+			var clauseFields = clausesLines[i].split(' ');
+			for (var j = 0; j < clauseFields.length; j++) {
+				var neg = false;
+				if (!clauseFields[j]) {
+					continue;
+				}
+				if (clauseFields[j][0] === '-') {
+					clauseFields[j] = clauseFields[j].substring(1);
+					neg = true;
+				}
+				if (!(clauseFields[j] in revVarsDict)) {
+					revVarsDict[clauseFields[j]] = varCounter;
+					varsDict[varCounter] = clauseFields[j];
+					varCounter++;
+				}
+				if (neg) {
+					newClause.push(-revVarsDict[clauseFields[j]]);
+				} else {
+					newClause.push(revVarsDict[clauseFields[j]]);
+				}
+			}
+			if (newClause.length !== 0) {
+				clauses.push(newClause);
+			}
+		}
+		return clauses;
+	}
+	
+	function getPrintableClauses(clauses, varsDict) {
+		var clausesLines = [];
+		for (var i = 0; i < clauses.length; i++) {
+			var clauseFields = [];
+			for (var j = 0; j < clauses[i].length; j++) {
+				if (clauses[i][j] < 0) {
+					clauseFields.push('-' + varsDict[-clauses[i][j]]);
+				} else {
+					clauseFields.push(varsDict[clauses[i][j]]);
+				}
+			}
+			clausesLines.push(clauseFields.join(' '));
+		}
+		return clausesLines.join('\n');
+	}
+	
+	function getPrintableSol(sol, varsDict) {
+		if (!sol[0]) {
+			return 'UNSATISFIABLE';
+		}
+		var txt = 'SATISFIABLE\n';
+		for (var v in sol[1]) {
+			if (v < 0) {
+				txt += '-' + varsDict[-v];
+			} else {
+				txt += varsDict[v];
+			}
+			txt += ' ';
+		}
+		return txt;
+	}
+	
+	function solve() {
+		var varsDict = {}; // Var number -> Var name
+		var clauses = getClauses($('problemTxt').value, varsDict); // Fills var dict
+		$('problemTxt').value = getPrintableClauses(clauses, varsDict);
+		var start = new Date();
+		var sol = dpll(clauses);
+		var elapsedTime = (new Date()) - start;
+		$('solutionTxt').innerHTML = getPrintableSol(sol, varsDict);
+		$('elapsedTxt').innerHTML = elapsedTime;
+	}
+	</script>
+
+	<script src="dataJson.js"></script>
+	<script src="graph.js"></script>
+</body>
+</html>
