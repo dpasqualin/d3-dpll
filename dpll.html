@@ -28,7 +28,7 @@
 	function $(id) {
 		return document.getElementById(id);
 	}
-	
+
 	function getClauses(txt, varsDict) {
 		var clausesLines = $('problemTxt').value.split('\n');
 		var clauses = [];
@@ -66,7 +66,7 @@
 		}
 		return clauses;
 	}
-	
+
 	function getPrintableClauses(clauses, varsDict) {
 		var clausesLines = [];
 		for (var i = 0; i < clauses.length; i++) {
@@ -82,7 +82,7 @@
 		}
 		return clausesLines.join('\n');
 	}
-	
+
 	function getPrintableSol(sol, varsDict) {
 		if (!sol[0]) {
 			return 'UNSATISFIABLE';
@@ -98,7 +98,7 @@
 		}
 		return txt;
 	}
-	
+
 	function solve() {
 		var varsDict = {}; // Var number -> Var name
 		var clauses = getClauses($('problemTxt').value, varsDict); // Fills var dict
