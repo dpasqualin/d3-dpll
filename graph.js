@@ -29,23 +29,26 @@ Graph.prototype._drawEdges = function(edges) {
 };
 
 Graph.prototype._drawNodes = function(nodesIn) {
-    var nodes svg.selectAll(".node")
-              .data(nodesIn)
-              .enter().append("g")
-              .attr("class", "node")
-              .attr("transform", function(d) {
-                    return "translate(" + d.y + "," + d.x + ")";
-              });
+    var nodes = svg.selectAll(".node")
+                   .data(nodesIn)
+                   .enter().append("g")
+                   .attr("class", "node")
+                   .attr("transform", function(d) {
+                        return "translate(" + d.y + "," + d.x + ")";
+                   });
 
-    nodeIn.append("circle")
-          .attr("r", 4.5);
+    nodesIn.append("circle")
+           .attr("r", 4.5);
 
+    nodesIn.append("text")
+           .attr("dx", function(d) { return d.children ? -8 : 8; })
+           .attr("dy", 3)
+           .style("text-anchor", function(d) {
+                return d.children ? "end" : "start";
+            })
+           .text(function(d) { return d.name; });
 
-    nodeIn.append("text")
-          .attr("dx", function(d) { return d.children ? -8 : 8; })
-          .attr("dy", 3)
-          .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-          .text(function(d) { return d.name; });
+    return nodes;
 }
 
 Graph.prototype.draw = function(data) {
