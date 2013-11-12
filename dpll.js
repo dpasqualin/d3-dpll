@@ -29,9 +29,9 @@ Satisfiability Problem: A Survey" p. 3
 
 "use strict";
 
-var dpll = (function () {
+var Dpll = function() { };
 
-	function simplifyClause(c, a) {
+Dpll.prototype._simplifyClause = function(c, a) {
 		var nc, i;
 		nc = [];
 		for (i = 0; i < c.length; i++) {
@@ -42,32 +42,32 @@ var dpll = (function () {
 			}
 		}
 		return nc;
-	}
+};
 
-	function applyAssignment(f, a) {
+Dpll.prototype._applyAssignment = function(f, a) {
 		var nf, i, nc;
 		nf = [];
 		for (i = 0; i < f.length; i++) {
-			nc = simplifyClause(f[i], a);
+			nc = this._simplifyClause(f[i], a);
 			if (nc !== null) {
 				nf.push(nc);
 			}
 		}
 		return nf;
-	}
+};
 
-	function cloneAssignment(a) {
+Dpll.prototype._cloneAssignment = function(a) {
 		var na, v;
 		na = {};
 		for (v in a) {
 			na[v] = true;
 		}
 		return na;
-	}
+};
 
-	function recDPLL(f, a) {
+Dpll.prototype._recDPLL = function(f, a) {
 		var i, na, v, ret;
-		f = applyAssignment(f, a);
+		f = this._applyAssignment(f, a);
 		if (f.length === 0) {
 			return [true, a];
 		}
@@ -75,26 +75,96 @@ var dpll = (function () {
 			if (f[i].length === 0) {
 				return [false, {}];
 			} else if (f[i].length === 1) {
-				na = cloneAssignment(a);
+				na = this._cloneAssignment(a);
 				na[f[i][0]] = true;
-				return recDPLL(f, na);
+				return _recDPLL(f, na);
 			}
 		}
-		na = cloneAssignment(a);
+		na = this._cloneAssignment(a);
 		na[f[0][0]] = true;
-		ret = recDPLL(f, na);
+		ret = this._recDPLL(f, na);
 		if (ret[0]) {
 			return ret;
 		}
 		delete na[f[0][0]];
 		na[-f[0][0]] = true;
-		return recDPLL(f, na);
-	}
+		return this._recDPLL(f, na);
+}
 
-	return function (f, a) {
-		if (!a) {
-			a = {};
-		}
-		return recDPLL(f, a);
-	};
-}());
+Dpll.prototype.getClauses = function(txt, varsDict) {
+    var clausesLines = $('#problemTxt').val().split('\n');
+    var clauses = [];
+    var varCounter = 1;
+    var revVarsDict = {}; // var name -> var num
+    for (var i = 0; i < clausesLines.length; i++) {
+        if (!clausesLines[i]) {
+            continue;
+        }
+        var newClause = [];
+        var clauseFields = clausesLines[i].split(' ');
+        for (var j = 0; j < clauseFields.length; j++) {
+            var neg = false;
+            if (!clauseFields[j]) {
+                continue;
+            }
+            if (clauseFields[j][0] === '-') {
+                clauseFields[j] = clauseFields[j].substring(1);
+                neg = true;
+            }
+            if (!(clauseFields[j] in revVarsDict)) {
+                revVarsDict[clauseFields[j]] = varCounter;
+                varsDict[varCounter] = clauseFields[j];
+                varCounter++;
+            }
+            if (neg) {
+                newClause.push(-revVarsDict[clauseFields[j]]);
+            } else {
+                newClause.push(revVarsDict[clauseFields[j]]);
+            }
+        }
+        if (newClause.length !== 0) {
+            clauses.push(newClause);
+        }
+    }
+    return clauses;
+};
+
+Dpll.prototype.getPrintableClauses = function(clauses, varsDict) {
+    var clausesLines = [];
+    for (var i = 0; i < clauses.length; i++) {
+        var clauseFields = [];
+        for (var j = 0; j < clauses[i].length; j++) {
+            if (clauses[i][j] < 0) {
+                clauseFields.push('-' + varsDict[-clauses[i][j]]);
+            } else {
+                clauseFields.push(varsDict[clauses[i][j]]);
+            }
+        }
+        clausesLines.push(clauseFields.join(' '));
+    }
+    return clausesLines.join('\n');
+};
+
+Dpll.prototype.getPrintableSol = function(sol, varsDict) {
+    if (!sol[0]) {
+        return 'UNSATISFIABLE';
+    }
+    var txt = 'SATISFIABLE\n';
+    for (var v in sol[1]) {
+        if (v < 0) {
+            txt += '-' + varsDict[-v];
+        } else {
+            txt += varsDict[v];
+        }
+        txt += ' ';
+    }
+    return txt;
+};
+
+/* This is the function that must be call in order to solve a formula */
+Dpll.prototype.solve = function(f, a) {
+    if (!a) {
+        a = {};
+    }
+    return this._recDPLL(f, a);
+}
