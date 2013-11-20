@@ -13,7 +13,7 @@
 	<p>
 	Enter a series of clauses (one for each line):
 	<p>
-	<textarea id="problemTxt"></textarea>
+	<textarea id="problemTxt" cols="50" rows="10" ></textarea>
 	<p>
 	<input id="solveBtn" type="submit" value="Solve">
 	<p>
@@ -32,15 +32,20 @@
 
 	$(document).ready(function() {
 		var varsDict = {}; // Var number -> Var name
-        var dpll = new Dpll();
-		var clauses = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
-		$('#problemTxt').val(dpll.getPrintableClauses(clauses, varsDict));
-		var start = new Date();
-		var sol = dpll.solve(clauses);
-		var elapsedTime = (new Date()) - start;
-		$('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
-		$('#elapsedTxt').html(elapsedTime);
+        var graph = new Graph('#graph');
+        var dpll = new Dpll(graph);
+
+        $('#solveBtn').click(function() {
+    		var clauses = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
+    		$('#problemTxt').val(dpll.getPrintableClauses(clauses, varsDict));
+    		var start = new Date();
+    		var sol = dpll.solve(clauses);
+    		var elapsedTime = (new Date()) - start;
+    		$('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
+    		$('#elapsedTxt').html(elapsedTime);
+        });
 	});
+
 	</script>
 
 </body>
