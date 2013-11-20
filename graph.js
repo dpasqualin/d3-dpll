@@ -1,19 +1,20 @@
 "use strict";
 
-var Graph = function () {
+var Graph = function (graph_element) {
+    this.graph_element = graph_element;
     this.width =  960;
     this.height = 2200;
 
     this.cluster = d3.layout.cluster()
-                            .size([height, width - 160]);
+                            .size([this.height, this.width - 160]);
 
     this.diagonal = d3.svg.diagonal()
                           .projection(function(d) { return [d.y, d.x]; });
 
-    this.svg = d3.select("#graph")
+    this.svg = d3.select(this.graph_element)
                  .append("svg")
-                     .attr("width", width)
-                     .attr("height", height)
+                     .attr("width", this.width)
+                     .attr("height", this.height)
                  .append("g")
                      .attr("transform", "translate(40,0)");
 
@@ -21,26 +22,26 @@ var Graph = function () {
 };
 
 Graph.prototype._drawEdges = function(edges) {
-    return svg.selectAll(".link")
-              .data(edges)
-              .enter().append("path")
-              .attr("class", "link")
-              .attr("d", this.diagonal);
+    return this.svg.selectAll(".link")
+                   .data(edges)
+                   .enter().append("path")
+                   .attr("class", "link")
+                   .attr("d", this.diagonal);
 };
 
 Graph.prototype._drawNodes = function(nodesIn) {
-    var nodes = svg.selectAll(".node")
-                   .data(nodesIn)
-                   .enter().append("g")
-                   .attr("class", "node")
-                   .attr("transform", function(d) {
-                        return "translate(" + d.y + "," + d.x + ")";
-                   });
+    var nodes = this.svg.selectAll(".node")
+                        .data(nodesIn)
+                        .enter().append("g")
+                        .attr("class", "node")
+                        .attr("transform", function(d) {
+                            return "translate(" + d.y + "," + d.x + ")";
+                        });
 
-    nodesIn.append("circle")
+    nodes.append("circle")
            .attr("r", 4.5);
 
-    nodesIn.append("text")
+    nodes.append("text")
            .attr("dx", function(d) { return d.children ? -8 : 8; })
            .attr("dy", 3)
            .style("text-anchor", function(d) {
@@ -51,10 +52,12 @@ Graph.prototype._drawNodes = function(nodesIn) {
     return nodes;
 }
 
-Graph.prototype.draw = function(data) {
+Graph.prototype.draw = function(dataIn) {
 
-    var nodes = cluster.nodes(data),
-        edges = cluster.links(nodes);
+    var data = jQuery.extend(true, {}, dataIn);
+
+    var nodes = this.cluster.nodes(data),
+        edges = this.cluster.links(nodes);
 
     this._drawEdges(edges);
     this._drawNodes(nodes);
