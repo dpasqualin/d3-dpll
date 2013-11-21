@@ -73,15 +73,12 @@ Dpll.prototype._cloneAssignment = function(a) {
 
 Dpll.prototype._updateTree = function(a, na) {
     var s_tree_children = this._s_tree.children;
-    console.log(na,this._s_tree);
     if (na === true || na === false) return;
     for (var v in na) {
         var found = false;
         for (var i=0; i<s_tree_children.length; i++) {
             var name = String(s_tree_children[i].name);
-            console.log('compare',name,v);
             if (name === v) {
-                console.log('found',v);
                 s_tree_children = s_tree_children[i].children;
                 found = true;
                 break;
@@ -90,22 +87,18 @@ Dpll.prototype._updateTree = function(a, na) {
         if (found) {
             continue;
         }
-        console.log('add',v);
         s_tree_children.push({
             'name': String(v),
             'children': []
         });
 
         // Necessary to make the graph looks good
-        console.log('add',String(-v));
         s_tree_children.push({
             'name': String(-v),
             'children': []
         });
         s_tree_children = s_tree_children[s_tree_children.length-2].children;
     }
-    console.log('----------');
-    this._updateGraph();
 };
 
 Dpll.prototype._updateGraph = function () {
@@ -223,5 +216,7 @@ Dpll.prototype.solve = function(f, a) {
     if (!a) {
         a = {};
     }
-    return this._recDPLL(f, a);
+    var ret = this._recDPLL(f, a);
+    this._updateGraph();
+    return ret;
 }
