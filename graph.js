@@ -3,7 +3,7 @@
 var Graph = function (graph_element) {
     this.graph_element = graph_element;
     this.width =  960;
-    this.height = 2200;
+    this.height = 1200;
 
     this.cluster = d3.layout.cluster()
                             .size([this.height, this.width - 160]);
@@ -21,22 +21,30 @@ var Graph = function (graph_element) {
     d3.select(self.frameElement).style("height", this.height + "px");
 };
 
-Graph.prototype._drawEdges = function(edges) {
-    return this.svg.selectAll(".link")
-                   .data(edges)
-                   .enter().append("path")
-                   .attr("class", "link")
-                   .attr("d", this.diagonal);
+Graph.prototype._drawEdges = function(edgesIn) {
+    var edges = this.svg.selectAll(".link")
+                    .data(edgesIn);
+
+    edges.enter()
+         .append("path")
+         .attr("class", "link")
+         .attr("d", this.diagonal);
+
+    edges.exit().remove();
+
+    return edges;
 };
 
 Graph.prototype._drawNodes = function(nodesIn) {
     var nodes = this.svg.selectAll(".node")
-                        .data(nodesIn)
-                        .enter().append("g")
-                        .attr("class", "node")
-                        .attr("transform", function(d) {
-                            return "translate(" + d.y + "," + d.x + ")";
-                        });
+                        .data(nodesIn);
+
+    nodes.enter()
+         .append("g")
+         .attr("class", "node")
+         .attr("transform", function(d) {
+            return "translate(" + d.y + "," + d.x + ")";
+         });
 
     nodes.append("circle")
            .attr("r", 4.5);
@@ -48,6 +56,8 @@ Graph.prototype._drawNodes = function(nodesIn) {
                 return d.children ? "end" : "start";
             })
            .text(function(d) { return d.name; });
+
+    nodes.exit().remove();
 
     return nodes;
 }
