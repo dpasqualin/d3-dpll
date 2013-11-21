@@ -30,10 +30,6 @@ Satisfiability Problem: A Survey" p. 3
 "use strict";
 
 var Dpll = function(graph) {
-    this._s_tree = {
-        'name': 'Root',
-        'children': []
-    };
     this._graph = graph;
 };
 
@@ -213,6 +209,12 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
 
 /* This is the function that must be call in order to solve a formula */
 Dpll.prototype.solve = function(f, a) {
+
+    this._s_tree = {
+        'name': 'Root',
+        'children': []
+    };
+
     if (!a) {
         a = {};
     }
