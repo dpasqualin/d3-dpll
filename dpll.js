@@ -67,18 +67,35 @@ Dpll.prototype._cloneAssignment = function(a) {
 		return na;
 };
 
+/* Receives an assingment as an array object and return it sorted */
+Dpll.prototype._sortAssignment = function(a) {
+    return a.sort(function(x,y) {return x-y;});
+}
+
+/* Receives an object and return it's keys as an array of integers */
+Dpll.prototype._objectToArray = function(obj) {
+    var a = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            a.push(parseInt(key));
+        }
+    }
+    return a;
+}
+
 Dpll.prototype._updateTree = function(a, na) {
-    var s_tree_children = this._s_tree.children;
     if (na === true || na === false) return;
-    console.log(a,na);
-    //FIXME, I think I need to sort na first?
-    // It's going badly for (1 or 2, -1)
-    for (var v in na) {
+    var s_tree_children = this._s_tree.children;
+    // Sorted new assignment in array form
+    var sna = this._sortAssignment(this._objectToArray(na));
+    console.log(a, na, sna);
+    for (var i=0; i<sna.length; i++) {
+        var literal = sna[i];
         var found = false;
-        for (var i=0; i<s_tree_children.length; i++) {
-            var name = String(s_tree_children[i].name);
-            if (name === v) {
-                s_tree_children = s_tree_children[i].children;
+        for (var j=0; j<s_tree_children.length; j++) {
+            var lit = String(s_tree_children[j].name);
+            if (lit === literal) {
+                s_tree_children = s_tree_children[j].children;
                 found = true;
                 break;
             }
@@ -87,13 +104,13 @@ Dpll.prototype._updateTree = function(a, na) {
             continue;
         }
         s_tree_children.push({
-            'name': String(v),
+            'name': String(literal),
             'children': []
         });
 
         // Necessary to make the graph looks good
         s_tree_children.push({
-            'name': String(-v),
+            'name': String(-literal),
             'children': []
         });
         s_tree_children = s_tree_children[s_tree_children.length-2].children;
