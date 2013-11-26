@@ -71,8 +71,10 @@ Dpll.prototype._updateTree = function(a, na) {
     var s_tree_children = this._s_tree.children;
     if (na === true || na === false) return;
     console.log(a,na);
-    //FIXME, I think I need to sort na first?
-    // It's going badly for (1 or 2, -1)
+
+    // FIXME, for some reason we might have a sequence of assingment like this:
+    // {-1: true} -> {2: true, -1: true}, which doesn't work in the current
+    // model
     for (var v in na) {
         var found = false;
         for (var i=0; i<s_tree_children.length; i++) {

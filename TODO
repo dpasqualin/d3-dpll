@@ -1,0 +1,5 @@
+O programa atual não funciona para a fórmula {1 ou 2, -1}, ele gera uma
+sequência de valoração que o "desenhador" de árvores não espera e a árvore de
+busca cria nodos repetidos. Acredito que terei que alterar a função de
+valoração para algo mais estável, onde seja possível traçar uma sequência de
+valoração que facilite o desenhar da árvore.
