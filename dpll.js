@@ -31,6 +31,7 @@ Satisfiability Problem: A Survey" p. 3
 
 var Dpll = function(graph) {
     this._graph = graph;
+
 };
 
 Dpll.prototype._simplifyClause = function(c, a) {
@@ -67,79 +68,80 @@ Dpll.prototype._cloneAssignment = function(a) {
 		return na;
 };
 
-Dpll.prototype._updateTree = function(a, na) {
-    var s_tree_children = this._s_tree.children;
-    if (na === true || na === false) return;
-    console.log(a,na);
-
-    // FIXME, for some reason we might have a sequence of assingment like this:
-    // {-1: true} -> {2: true, -1: true}, which doesn't work in the current
-    // model
-    for (var v in na) {
-        var found = false;
-        for (var i=0; i<s_tree_children.length; i++) {
-            var name = String(s_tree_children[i].name);
-            if (name === v) {
-                s_tree_children = s_tree_children[i].children;
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            continue;
-        }
-        s_tree_children.push({
-            'name': String(v),
-            'children': []
-        });
-
-        // Necessary to make the graph looks good
-        s_tree_children.push({
-            'name': String(-v),
-            'children': []
-        });
-        s_tree_children = s_tree_children[s_tree_children.length-2].children;
-    }
-};
-
-Dpll.prototype._updateGraph = function () {
+Dpll.prototype._updateGraph = function (tree) {
     if (!this._graph) {
         return;
     }
 
-    this._graph.draw(this._s_tree);
+    this._graph.draw(tree);
 }
 
-Dpll.prototype._recDPLL = function(f, a) {
-		var i, na, v, ret;
-		f = this._applyAssignment(f, a);
+Dpll.prototype._recDPLL = function(f, a, t) {
+		var i, na, v, ret, cur_a;
+		f = this._applyAssignment(f, a, t);
 		if (f.length === 0) {
-            this._updateTree(a, true);
-			return [true, a];
+            t.children.push({
+                'name': 'SAT',
+                'children': []
+            });
+			return [true, a, t];
 		}
 		for (i = 0; i < f.length; i++) {
 			if (f[i].length === 0) {
-                this._updateTree(a, false);
-				return [false, {}];
+                t.children.push({
+                    'name': 'UNSAT',
+                    'children': []
+                });
+				return [false, {}, t];
 			} else if (f[i].length === 1) {
 				na = this._cloneAssignment(a);
-				na[f[i][0]] = true;
-                this._updateTree(a, na);
-				return this._recDPLL(f, na);
+                cur_a = f[i][0];
+				na[cur_a] = true;
+                t.children.push({
+                    'name': String(cur_a),
+                    'children': []
+                });
+                t.children.push({
+                    'name': String(-cur_a),
+                    'children': []
+                });
+
+				return this._recDPLL(f, na, t.children[0]);
 			}
 		}
 		na = this._cloneAssignment(a);
-		na[f[0][0]] = true;
-        this._updateTree(a, na);
-		ret = this._recDPLL(f, na);
+        cur_a = f[0][0];
+		na[cur_a] = true;
+        t.children.push({
+            'name': String(cur_a),
+            'children': []
+        });
+        t.children.push({
+            'name': String(-cur_a),
+            'children': []
+        });
+
+		ret = this._recDPLL(f, na, t.children[0]);
 		if (ret[0]) {
-            this._updateTree(a, ret[0]);
+            t.children.push({
+                'name': ret[0]? 'SAT':'UNSAT',
+                'children': []
+            });
 			return ret;
 		}
-		delete na[f[0][0]];
-		na[-f[0][0]] = true;
-        this._updateTree(a, na);
-		return this._recDPLL(f, na);
+		delete na[cur_a];
+		na[-cur_a] = true;
+
+        t.children.push({
+            'name': String(cur_a),
+            'children': []
+        });
+        t.children.push({
+            'name': String(-cur_a),
+            'children': []
+        });
+
+		return this._recDPLL(f, na, t.children[1]);
 }
 
 Dpll.prototype.getClauses = function(txt, varsDict) {
@@ -213,17 +215,21 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
 };
 
 /* This is the function that must be call in order to solve a formula */
-Dpll.prototype.solve = function(f, a) {
+Dpll.prototype.solve = function(formula, assignment) {
 
-    this._s_tree = {
+    var tree = {
         'name': 'Root',
         'children': []
     };
 
-    if (!a) {
-        a = {};
+    if (!assignment) {
+        assignment = {};
     }
-    var ret = this._recDPLL(f, a);
-    this._updateGraph();
+
+    var ret = this._recDPLL(formula, assignment, tree);
+
+    console.log(tree);
+
+    this._updateGraph(tree);
     return ret;
 }
