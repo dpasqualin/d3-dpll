@@ -128,15 +128,6 @@ Dpll.prototype._recDPLL = function(f, a, t) {
 		delete na[cur_a];
 		na[-cur_a] = true;
 
-        t.children.push({
-            'name': String(cur_a),
-            'children': []
-        });
-        t.children.push({
-            'name': String(-cur_a),
-            'children': []
-        });
-
 		return this._recDPLL(f, na, t.children[1]);
 }
 
@@ -223,8 +214,6 @@ Dpll.prototype.solve = function(formula, assignment) {
     }
 
     var ret = this._recDPLL(formula, assignment, tree);
-
-    console.log(tree);
 
     this._updateGraph(tree);
     return ret;
