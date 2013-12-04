@@ -5,7 +5,7 @@ var Graph = function (graph_element) {
     this.width =  960;
     this.height = 1200;
 
-    this.cluster = d3.layout.cluster()
+    this.cluster = d3.layout.tree()
                             .size([this.height, this.width - 160]);
 
     this.diagonal = d3.svg.diagonal()
