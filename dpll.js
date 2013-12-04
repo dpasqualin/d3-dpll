@@ -123,10 +123,6 @@ Dpll.prototype._recDPLL = function(f, a, t) {
 
 		ret = this._recDPLL(f, na, t.children[0]);
 		if (ret[0]) {
-            t.children.push({
-                'name': ret[0]? 'SAT':'UNSAT',
-                'children': []
-            });
 			return ret;
 		}
 		delete na[cur_a];
