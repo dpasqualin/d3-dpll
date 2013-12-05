@@ -76,40 +76,34 @@ Dpll.prototype._updateGraph = function (tree) {
     this._graph.draw(tree);
 }
 
+/* Add a node named "name" to node "node" */
+Dpll.prototype._addTreeNode = function(node, name) {
+    node.children.push({
+        'name': String(name),
+        'children': []
+    });
+}
+
 Dpll.prototype._recDPLL = function(f, a, t) {
 		var i, na, v, ret, cur_a;
 		f = this._applyAssignment(f, a, t);
 		if (f.length === 0) {
-            t.children.push({
-                'name': 'SAT',
-                'children': []
-            });
+            this._addTreeNode(t, 'SAT');
 			return [true, a, t];
 		}
 		for (i = 0; i < f.length; i++) {
 			if (f[i].length === 0) {
-                t.children.push({
-                    'name': 'UNSAT',
-                    'children': []
-                });
+                this._addTreeNode(t, 'UNSAT');
 				return [false, {}, t];
 			} else if (f[i].length === 1) {
 				na = this._cloneAssignment(a);
                 cur_a = f[i][0];
 				na[cur_a] = true;
-                t.children.push({
-                    'name': String(cur_a),
-                    'children': []
-                });
+                this._addTreeNode(t, cur_a);
                 /* At this point there is only one literal not evaluated, so
                  * its complementary will be unsat */
-                t.children.push({
-                    'name': String(-cur_a),
-                    'children': [{
-                        'name': 'UNSAT',
-                        'children': []
-                    }]
-                });
+                this._addTreeNode(t, -cur_a);
+                this._addTreeNode(t.children[1], 'UNSAT');
 
 				return this._recDPLL(f, na, t.children[0]);
 			}
@@ -117,14 +111,8 @@ Dpll.prototype._recDPLL = function(f, a, t) {
 		na = this._cloneAssignment(a);
         cur_a = f[0][0];
 		na[cur_a] = true;
-        t.children.push({
-            'name': String(cur_a),
-            'children': []
-        });
-        t.children.push({
-            'name': String(-cur_a),
-            'children': []
-        });
+        this._addTreeNode(t, cur_a);
+        this._addTreeNode(t, -cur_a);
 
 		ret = this._recDPLL(f, na, t.children[0]);
 		if (ret[0]) {
