@@ -16,8 +16,6 @@
 	<p>
 	<input id="solveBtn" type="submit" value="Solve">
 	<p>
-	<strong>Elapsed time:</strong> <span id="elapsedTxt">-</span> ms
-	<p>
 	<strong>Solution:</strong>
 	<p>
 	<tt id="solutionTxt"></tt>
@@ -32,15 +30,13 @@
 		var varsDict = {}; // Var number -> Var name
         var graph = new Graph('#graph');
         var dpll = new Dpll(graph);
+        $('#problemTxt').val('1 2\n-1\n-2');
 
         $('#solveBtn').click(function() {
     		var clauses = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
     		$('#problemTxt').val(dpll.getPrintableClauses(clauses, varsDict));
-    		var start = new Date();
     		var sol = dpll.solve(clauses);
-    		var elapsedTime = (new Date()) - start;
     		$('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
-    		$('#elapsedTxt').html(elapsedTime);
         });
 	});
 
