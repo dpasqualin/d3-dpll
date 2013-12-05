@@ -101,9 +101,14 @@ Dpll.prototype._recDPLL = function(f, a, t) {
                     'name': String(cur_a),
                     'children': []
                 });
+                /* At this point there is only one literal not evaluated, so
+                 * its complementary will be unsat */
                 t.children.push({
                     'name': String(-cur_a),
-                    'children': []
+                    'children': [{
+                        'name': 'UNSAT',
+                        'children': []
+                    }]
                 });
 
 				return this._recDPLL(f, na, t.children[0]);
