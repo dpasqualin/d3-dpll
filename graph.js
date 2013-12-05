@@ -62,6 +62,16 @@ Graph.prototype._drawNodes = function(nodesIn) {
     return nodes;
 }
 
+/* FIXME: This function was not suppose to be necessary, but for some reason
+ * when the user try to start a new graph with just the root node some
+ * previous used edges, circles and nodes persist to show up in the graph */
+Graph.prototype.clean = function() {
+    this.svg.selectAll(".node").remove();
+    this.svg.selectAll("circle").remove();
+    this.svg.selectAll("text").remove();
+    this.svg.selectAll(".link").remove();
+}
+
 Graph.prototype.draw = function(dataIn) {
 
     var data = jQuery.extend(true, {}, dataIn);

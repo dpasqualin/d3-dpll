@@ -218,6 +218,8 @@ Dpll.prototype.solve = function(formula, assignment) {
         assignment = {};
     }
 
+    this._graph.clean();
+
     var ret = this._recDPLL(formula, assignment, tree);
 
     this._updateGraph(tree);
