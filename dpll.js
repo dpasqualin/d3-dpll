@@ -29,9 +29,12 @@ Satisfiability Problem: A Survey" p. 3
 
 "use strict";
 
-var Dpll = function(graph) {
+var Dpll = function(graph, config) {
     this._graph = graph;
-
+    this._next_step = true;
+    this._config = config || {
+        step_by_step: false
+    };
 };
 
 Dpll.prototype._simplifyClause = function(c, a) {
@@ -68,12 +71,15 @@ Dpll.prototype._cloneAssignment = function(a) {
 		return na;
 };
 
-Dpll.prototype._updateGraph = function (tree) {
+Dpll.prototype._updateGraph = function () {
     if (!this._graph) {
         return;
     }
 
-    this._graph.draw(tree);
+    // FIXME: The best way would be to add some transitions between graph
+    // updates instead of cleaning it all on every change
+    this._graph.clean();
+    this._graph.draw(this._tree_root);
 }
 
 /* Add a node named "name" to node "node" */
@@ -84,48 +90,101 @@ Dpll.prototype._addTreeNode = function(node, name) {
     });
 }
 
+Dpll.prototype.nextStep = function() {
+    this._next_step = true;
+}
+
 Dpll.prototype._recDPLL = function(f, a, t) {
-		var i, na, v, ret, cur_a;
-		f = this._applyAssignment(f, a, t);
-		if (f.length === 0) {
-            this._addTreeNode(t, 'SAT');
-			return [true, a, t];
-		}
-		for (i = 0; i < f.length; i++) {
-			if (f[i].length === 0) {
-                this._addTreeNode(t, 'UNSAT');
-				return [false, {}, t];
-			} else if (f[i].length === 1) {
-				na = this._cloneAssignment(a);
-                cur_a = f[i][0];
-				na[cur_a] = true;
-                this._addTreeNode(t, cur_a);
-                /* At this point there is only one literal not evaluated, so
-                 * its complementary will be unsat */
-                this._addTreeNode(t, -cur_a);
-                this._addTreeNode(t.children[1], 'UNSAT');
+    var i, na, v, ret, cur_a;
+    f = this._applyAssignment(f, a, t);
+    if (f.length === 0) {
+        this._addTreeNode(t, 'SAT');
+        this._state = [true, a, t];
+        return;
+    }
+    for (i = 0; i < f.length; i++) {
+        if (f[i].length === 0) {
+            this._addTreeNode(t, 'UNSAT');
+            this._state = [false, {}, t, null];
+            return;
+        } else if (f[i].length === 1) {
+            na = this._cloneAssignment(a);
+            cur_a = f[i][0];
+            na[cur_a] = true;
+            this._addTreeNode(t, cur_a);
+            /* At this point there is only one literal not evaluated, so
+             * its complementary will be unsat */
+            this._addTreeNode(t, -cur_a);
+            this._addTreeNode(t.children[1], 'UNSAT');
+            this._state = [f, na, t.children[0], cur_a];
+            return;
+        }
+    }
+    na = this._cloneAssignment(a);
+    cur_a = f[0][0];
+    na[cur_a] = true;
+    this._addTreeNode(t, cur_a);
+    this._addTreeNode(t, -cur_a);
 
-				return this._recDPLL(f, na, t.children[0]);
-			}
-		}
-		na = this._cloneAssignment(a);
-        cur_a = f[0][0];
-		na[cur_a] = true;
-        this._addTreeNode(t, cur_a);
-        this._addTreeNode(t, -cur_a);
+    this._state = [f, na, t.children[0], cur_a];
+}
 
-		ret = this._recDPLL(f, na, t.children[0]);
-		if (ret[0]) {
-			return ret;
-		}
-		delete na[cur_a];
-		na[-cur_a] = true;
+Dpll.prototype.nextStep = function() {
 
-		return this._recDPLL(f, na, t.children[1]);
+    var formula = this._state[0],
+        assignment = this._state[1],
+        tree = this._state[2],
+        cur_a = this._state[3];
+
+    if (this._hasFinished(tree)) {
+        this._updateGraph();
+        return [ true, formula, this._state ];
+    }
+
+    if (formula === false) {
+        delete assignment[cur_a];
+        assignment[-cur_a] = true;
+        this._recDPLL(formula, assignment, tree);
+    } else {
+        this._recDPLL(formula, assignment, tree);
+    }
+    this._updateGraph();
+    return [ false, undefined, this._state ];
+}
+
+/* This is the function that must be call in order to solve a formula */
+Dpll.prototype.solve = function(formula, assignment, config) {
+
+    var tree = {
+        'name': 'Root',
+        'children': []
+    };
+    this._tree_root = tree;
+
+    if (config) {
+        for (var c in config) {
+            this._config[c] = config[c];
+        }
+    }
+
+    this._graph.clean();
+
+    this._recDPLL(formula, assignment, tree);
+    if (!this._config.step_by_step) {
+        while (this.nextStep()[0] === false) {
+            // do nothing
+        }
+        this._updateGraph();
+        return this.nextStep();
+    } else {
+        this._updateGraph();
+        return [false, false, {}];
+    }
+
 }
 
 Dpll.prototype.getClauses = function(txt, varsDict) {
-    var clausesLines = $('#problemTxt').val().split('\n');
+    var clausesLines = txt.split('\n');
     var clauses = [];
     var varCounter = 1;
     var revVarsDict = {}; // var name -> var num
@@ -194,22 +253,16 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
     return txt;
 };
 
-/* This is the function that must be call in order to solve a formula */
-Dpll.prototype.solve = function(formula, assignment) {
-
-    var tree = {
-        'name': 'Root',
-        'children': []
-    };
-
-    if (!assignment) {
-        assignment = {};
+/* It has finished if every node in the tree has an UNSAT leaf */
+Dpll.prototype._hasFinished = function(tree) {
+    var c = tree.children;
+    if (c.length === 1 && (c[0].name === 'UNSAT' || c[0].name === 'SAT')) {
+        return true;
+    } else if (c.length === 0) {
+        return false;
     }
 
-    this._graph.clean();
-
-    var ret = this._recDPLL(formula, assignment, tree);
-
-    this._updateGraph(tree);
-    return ret;
+    return this._hasFinished(tree.children[0]) && this._hasFinished(tree.children[1]);
 }
+
+

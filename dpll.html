@@ -16,6 +16,8 @@
 	<p>
 	<input id="solveBtn" type="submit" value="Solve">
 	<p>
+	<input id="nextBtn" type="submit" value="Next Step">
+	<p>
 	<strong>Solution:</strong>
 	<p>
 	<tt id="solutionTxt"></tt>
@@ -30,14 +32,37 @@
 		var varsDict = {}; // Var number -> Var name
         var graph = new Graph('#graph');
         var dpll = new Dpll(graph);
+        var $nextBtn = $('#nextBtn');
+        var $solveBtn = $('#solveBtn');
+
+        function printResult(objRes) {
+            var done = objRes[0],
+                sat = objRes[1],
+                sol = objRes[2];
+
+            if (done) {
+    		    $('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
+                $nextBtn.prop('disabled', true);
+                $solveBtn.prop('disabled', false);
+            }
+        };
+
         $('#problemTxt').val('1 2\n-1\n-2');
 
-        $('#solveBtn').click(function() {
-    		var clauses = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
-    		$('#problemTxt').val(dpll.getPrintableClauses(clauses, varsDict));
-    		var sol = dpll.solve(clauses);
-    		$('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
+        $solveBtn.click(function() {
+    		var formula = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
+    		$('#problemTxt').val(dpll.getPrintableClauses(formula, varsDict));
+    		var objRes = dpll.solve(formula, {}, {'step_by_step': true});
+            $nextBtn.prop('disabled', false);
+            $solveBtn.prop('disabled', true);
+            printResult(objRes);
         });
+
+        $nextBtn.prop('disabled', true);
+        $nextBtn.click(function() {
+            printResult(dpll.nextStep());
+        });
+
 	});
 
 	</script>
