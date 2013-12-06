@@ -29,7 +29,7 @@
         </div>
         <div class="checkbox">
           <label>
-            <input id="stepByStep" type="checkbox"> Step by Step
+            <input id="stepByStep" type="checkbox" checked="true"> Step by Step
           </label>
         </div>
 	    <p>
@@ -79,9 +79,12 @@
         $('#problemTxt').val('1 2\n-1\n-2');
 
         $solveBtn.click(function() {
+            var step_by_step = $('#stepByStep').is(':checked');
+            var opts = {'step_by_step': step_by_step};
+
     		var formula = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
-    		$('#problemTxt').val(dpll.getPrintableClauses(formula, varsDict));
-    		var objRes = dpll.solve(formula, {}, {'step_by_step': true});
+    		var objRes = dpll.solve(formula, {}, opts);
+
             $nextBtn.prop('disabled', false);
             $solveBtn.prop('disabled', true);
             printResult(objRes);
