@@ -1,28 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>SAT Solver</title>
-	<link href="dpll.css" media="all" rel="stylesheet" type="text/css" />
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+	<title>DPLL SAT Solver</title>
+
+	<link href="dist/css/bootstrap.css" rel="stylesheet" type="text/css" />
+	<link href="dist/css/sticky-footer.css" rel="stylesheet" type="text/css" />
+	<link href="dpll.css" rel="stylesheet" type="text/css" />
+	<link href="dpll.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div id="wrap">
+    <div class="container">
+        <div class="page-header">
+        	<h1>SAT Solver</h1>
+        </div>
+    	<p>
+    	Enter a series of clauses (one for each line):
+	    <p>
+        <div class="form-group">
+    	    <textarea id="problemTxt" class="form-control" rows="10" ></textarea>
+        </div>
+        <div class="checkbox">
+          <label>
+            <input id="stepByStep" type="checkbox"> Step by Step
+          </label>
+        </div>
+	    <p>
+        <button id="solveBtn" type="button" class="btn btn-default">Solve</button>
+        <button id="nextBtn" type="button" class="btn btn-default">Next Step</button>
+	    <p>
+	    <strong>Solution:</strong>
+	    <p>
+	    <tt id="solutionTxt"></tt>
+	    <div id="graph"></div>
+    </div>
+    </div>
+
+    <div id="footer">
+        <div class="container">
+            <p class="text-muted">Copyleft Diego Pasqualin 2013</p>
+        </div>
+    </div>
+
 	<script src="jquery-1.10.1.min.js"></script>
 	<script src="d3.v3.min.js" charset="utf-8"></script>
 	<script src="dpll.js"></script>
-</head>
-<body>
-	<h1>SAT Solver</h1>
-	<p>
-	Enter a series of clauses (one for each line):
-	<p>
-	<textarea id="problemTxt" cols="50" rows="10" ></textarea>
-	<p>
-	<input id="solveBtn" type="submit" value="Solve">
-	<p>
-	<input id="nextBtn" type="submit" value="Next Step">
-	<p>
-	<strong>Solution:</strong>
-	<p>
-	<tt id="solutionTxt"></tt>
-	<div id="graph"></div>
-
 	<script src="dpll.js"></script>
 	<script src="graph.js"></script>
 
