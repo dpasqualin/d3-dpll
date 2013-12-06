@@ -35,6 +35,7 @@
 	    <p>
         <button id="solveBtn" type="button" class="btn btn-default">Solve</button>
         <button id="nextBtn" type="button" class="btn btn-default">Next Step</button>
+        <span class="label label-info">You can press "n" to advance to the next step</span>
 	    <p>
 	    <strong>Solution:</strong>
 	    <p>
@@ -93,6 +94,16 @@
         $nextBtn.prop('disabled', true);
         $nextBtn.click(function() {
             printResult(dpll.nextStep());
+        });
+
+        /* Allow user to press "n" to advance to next step */
+        $(document).keypress(function(e) {
+            if ($(e.target).is('input, textarea')) {
+                return;
+            }
+            if (e.which === 110) {
+                $nextBtn.trigger('click');
+            };
         });
 
 	});
