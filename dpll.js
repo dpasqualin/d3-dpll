@@ -57,9 +57,7 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
         node.children = [];
 
     /* Ensure the current assignment has been applied to the formula */
-    console.log(formula,assignment);
     var new_f = this._applyAssignment(formula, assignment)
-    console.log(formula);
 
     node.children.push({
         'name': String(name),
