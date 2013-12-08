@@ -19,7 +19,7 @@
     <div id="wrap">
     <div class="container">
         <div class="page-header">
-        	<h1>SAT Solver</h1>
+        	<h1>DPLL SAT Solver</h1>
         </div>
     	<p>
     	Enter a series of clauses (one for each line):
@@ -33,7 +33,7 @@
           </label>
         </div>
 	    <p>
-        <button id="solveBtn" type="button" class="btn btn-default">Solve</button>
+        <button id="solveBtn" type="button" class="btn btn-default">Start</button>
         <button id="nextBtn" type="button" class="btn btn-default">Next Step</button>
         <span class="label label-info">You can press "n" to advance to the next step</span>
 	    <p>
@@ -84,9 +84,18 @@
 
         $('#problemTxt').val('1 2\n-1\n-2');
 
+        $('#stepByStep').change(function() {
+            console.log('change');
+            var text = $(this).is(':checked') ? 'Start':'Solve';
+            console.log(text);
+            $solveBtn.html(text);
+        });
+
         $solveBtn.click(function() {
             var step_by_step = $('#stepByStep').is(':checked');
             var opts = {'step_by_step': step_by_step};
+
+            $('#solutionTxt').html('');
 
     		var formula = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
     		var objRes = dpll.solve(formula, {}, opts);
