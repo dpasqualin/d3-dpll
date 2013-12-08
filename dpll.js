@@ -52,15 +52,19 @@ Dpll.prototype._updateGraph = function () {
 }
 
 /* Add a node named "name" to node "node" */
-Dpll.prototype._addTreeNode = function(formula, node, name) {
+Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     if (!node.children)
         node.children = [];
 
-    var f = this.getPrintableFormula(formula);
+    /* Ensure the current assignment has been applied to the formula */
+    console.log(formula,assignment);
+    var new_f = this._applyAssignment(formula, assignment)
+    console.log(formula);
+
     node.children.push({
         'name': String(name),
         'children': [],
-        'formula': f
+        'formula': this.getPrintableFormula(new_f)
     });
 }
 
@@ -70,26 +74,27 @@ Dpll.prototype.nextStep = function() {
 
 Dpll.prototype._recDPLL = function(f, a, t) {
     var i, na, v, ret, cur_a;
-    f = this._applyAssignment(f, a, t);
+    f = this._applyAssignment(f, a);
     if (f.length === 0) {
-        this._addTreeNode(f, t, 'SAT');
+        this._addTreeNode(a, f, t, 'SAT');
         this._state = [true, a, t];
         return;
     }
     for (i = 0; i < f.length; i++) {
         if (f[i].length === 0) {
-            this._addTreeNode(f, t, 'UNSAT');
+            this._addTreeNode(a, f, t, 'UNSAT');
             this._state = [false, {}, t, null];
             return;
         } else if (f[i].length === 1) {
             na = this._cloneAssignment(a);
             cur_a = f[i][0];
             na[cur_a] = true;
-            this._addTreeNode(f, t, cur_a);
+
+            this._addTreeNode(na, f, t, cur_a);
             /* At this point there is only one literal not evaluated, so
              * its complementary will be unsat */
-            this._addTreeNode(f, t, -cur_a);
-            this._addTreeNode(f, t.children[1], 'UNSAT');
+            this._addTreeNode(na, f, t, -cur_a);
+            this._addTreeNode(na, f, t.children[1], 'UNSAT');
             this._state = [f, na, t.children[0], cur_a];
             return;
         }
@@ -97,8 +102,8 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     na = this._cloneAssignment(a);
     cur_a = f[0][0];
     na[cur_a] = true;
-    this._addTreeNode(f, t, cur_a);
-    this._addTreeNode(f, t, -cur_a);
+    this._addTreeNode(na, f, t, cur_a);
+    this._addTreeNode(na, f, t, -cur_a);
 
     this._state = [f, na, t.children[0], cur_a];
 }
