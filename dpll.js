@@ -3,6 +3,7 @@
 var Dpll = function(graph, config) {
     this._graph = graph;
     this._next_step = true;
+    this._finished = false;
     this._config = config || {
         step_by_step: false
     };
@@ -137,7 +138,9 @@ Dpll.prototype.solve = function(formula, assignment, config) {
         'children': [],
         'formula': this.getPrintableFormula(formula)
     };
+
     this._tree_root = tree;
+    this._finished = false;
 
     if (config) {
         for (var c in config) {
@@ -223,8 +226,11 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
 
 /* It has finished if every node in the tree has an UNSAT leaf */
 Dpll.prototype._hasFinished = function(tree) {
+    if (this._finished) return true;
     var c = tree.children;
+
     if (c !== undefined && c.length === 1 && (c[0].name === 'UNSAT' || c[0].name === 'SAT')) {
+        this._finished = true;
         return true;
     } else if (c === undefined || c.length === 0) {
         return false;
