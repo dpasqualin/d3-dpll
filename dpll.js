@@ -108,7 +108,6 @@ Dpll.prototype.nextStep = function() {
         cur_a = this._state[3];
 
     if (this._hasFinished(tree)) {
-        this._updateGraph();
         return [ true, formula, this._state ];
     }
 
