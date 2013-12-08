@@ -4,6 +4,7 @@ var Graph = function (graph_element) {
     this.graph_element = graph_element;
     this.width =  960;
     this.height = 1200;
+    this.last_id = 0;
 
     this.cluster = d3.layout.tree()
                             .size([this.height, this.width - 160]);
@@ -26,11 +27,13 @@ var Graph = function (graph_element) {
 Graph.prototype._drawEdges = function(edgesIn, source) {
     var me = this;
 
-    var edges = this.svg.selectAll("g.link")
-                    .data(edgesIn);
+    var edges = this.svg.selectAll("path.link")
+                    .data(edgesIn, function(d) {
+                        return d.target.id;
+                    });
 
     edges.enter()
-         .insert("svg:path")
+         .insert("svg:path", "g")
          .attr("class", "link")
          .attr("d", function(d) {
              var o = {x: source.x0 || me.height/2, y: source.y0 || 0};
@@ -58,28 +61,36 @@ Graph.prototype._drawEdges = function(edgesIn, source) {
     return edges;
 };
 
-Graph.prototype._drawNodes = function(nodesIn) {
+Graph.prototype._drawNodes = function(nodesIn, source) {
+    var me = this;
 
     var nodes = this.svg.selectAll("g.node")
-                        .data(nodesIn);
+                        .data(nodesIn, function(d) { return d.id || (d.id = ++me.last_id); });
+
+    // Normalize for fixed-depth.
+    //nodesIn.forEach(function(d) { d.y = d.depth * 180; });
 
     var nodesEnter = nodes.enter()
          .append("svg:g")
          .attr("class", "node")
          .attr("transform", function(d) {
-            return "translate(" + d.y + "," + d.x + ")";
+            return "translate(" + source.y0 + "," + source.x0 + ")";
          });
 
     nodesEnter.append("svg:circle")
-           .attr("r", 4.5);
+           .attr("r", 4.5)
+           .style("fill", function(d) {
+                return d._children ? "lightsteelblue" : "#fff";
+           });
 
-    nodesEnter.append("text")
+    nodesEnter.append("svg:text")
            .attr("dx", function(d) { return d.children ? -8 : 8; })
            .attr("dy", 3)
            .style("text-anchor", function(d) {
                 return d.children ? "end" : "start";
             })
-           .text(function(d) { return d.name; });
+           .text(function(d) { return d.name; })
+           .style("fill-opacity", 1e-6);
 
     /* Transition nodes to their new position. */
     var nodesUpdate = nodes.transition()
@@ -95,16 +106,19 @@ Graph.prototype._drawNodes = function(nodesIn) {
     nodesUpdate.select("text")
         .style("fill-opacity", 1);
 
-    // Transition exiting nodes to the parent's new position.
+    /* Transition exiting nodes to the parent's new position. */
     var nodesExit = nodes.exit().transition()
         .duration(this.duration)
+        .attr("transform", function(d) {
+            return "translate(" + source.y + "," + source.x + ")";
+        })
         .remove();
 
     nodesExit.select("circle")
-        .attr("r", 0);
+        .attr("r", 1e-6);
 
     nodesExit.select("text")
-        .style("fill-opacity", 0);
+        .style("fill-opacity", 1e-6);
 
     /* Stash the old positions for transition. */
     nodesIn.forEach(function(d) {
@@ -115,23 +129,12 @@ Graph.prototype._drawNodes = function(nodesIn) {
     return nodes;
 }
 
-/* FIXME: This function was not suppose to be necessary, but for some reason
- * when the user try to start a new graph with just the root node some
- * previous used edges, circles and nodes persist to show up in the graph */
-Graph.prototype.clean = function() {
-    this.svg.selectAll(".node").remove();
-    this.svg.selectAll("circle").remove();
-    this.svg.selectAll("text").remove();
-    this.svg.selectAll(".link").remove();
-}
-
 Graph.prototype.draw = function(dataIn) {
 
-    var nodes = this.cluster.nodes(dataIn),
-        edges = this.cluster.links(nodes);
+    var nodes = this.cluster.nodes(dataIn).reverse(),
+        edges = this.cluster.links(nodes).reverse();
 
+    this._drawNodes(nodes, dataIn);
     this._drawEdges(edges, dataIn);
-    this._drawNodes(nodes);
-    console.log(dataIn);
 
 }

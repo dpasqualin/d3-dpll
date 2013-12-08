@@ -48,9 +48,6 @@ Dpll.prototype._updateGraph = function () {
     }
     var root = this._tree_root;
 
-    // FIXME: The best way would be to add some transitions between graph
-    // updates instead of cleaning it all on every change
-    this._graph.clean();
     this._graph.draw(root);
 }
 
@@ -141,8 +138,6 @@ Dpll.prototype.solve = function(formula, assignment, config) {
             this._config[c] = config[c];
         }
     }
-
-    this._graph.clean();
 
     this._recDPLL(formula, assignment, tree);
     this._updateGraph();
