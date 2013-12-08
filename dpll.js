@@ -52,13 +52,15 @@ Dpll.prototype._updateGraph = function () {
 }
 
 /* Add a node named "name" to node "node" */
-Dpll.prototype._addTreeNode = function(node, name) {
+Dpll.prototype._addTreeNode = function(formula, node, name) {
     if (!node.children)
         node.children = [];
 
+    var f = this.getPrintableFormula(formula);
     node.children.push({
         'name': String(name),
-        'children': []
+        'children': [],
+        'formula': f
     });
 }
 
@@ -70,24 +72,24 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     var i, na, v, ret, cur_a;
     f = this._applyAssignment(f, a, t);
     if (f.length === 0) {
-        this._addTreeNode(t, 'SAT');
+        this._addTreeNode(f, t, 'SAT');
         this._state = [true, a, t];
         return;
     }
     for (i = 0; i < f.length; i++) {
         if (f[i].length === 0) {
-            this._addTreeNode(t, 'UNSAT');
+            this._addTreeNode(f, t, 'UNSAT');
             this._state = [false, {}, t, null];
             return;
         } else if (f[i].length === 1) {
             na = this._cloneAssignment(a);
             cur_a = f[i][0];
             na[cur_a] = true;
-            this._addTreeNode(t, cur_a);
+            this._addTreeNode(f, t, cur_a);
             /* At this point there is only one literal not evaluated, so
              * its complementary will be unsat */
-            this._addTreeNode(t, -cur_a);
-            this._addTreeNode(t.children[1], 'UNSAT');
+            this._addTreeNode(f, t, -cur_a);
+            this._addTreeNode(f, t.children[1], 'UNSAT');
             this._state = [f, na, t.children[0], cur_a];
             return;
         }
@@ -95,8 +97,8 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     na = this._cloneAssignment(a);
     cur_a = f[0][0];
     na[cur_a] = true;
-    this._addTreeNode(t, cur_a);
-    this._addTreeNode(t, -cur_a);
+    this._addTreeNode(f, t, cur_a);
+    this._addTreeNode(f, t, -cur_a);
 
     this._state = [f, na, t.children[0], cur_a];
 }
@@ -129,7 +131,8 @@ Dpll.prototype.solve = function(formula, assignment, config) {
 
     var tree = {
         'name': 'Root',
-        'children': []
+        'children': [],
+        'formula': this.getPrintableFormula(formula)
     };
     this._tree_root = tree;
 
@@ -190,20 +193,13 @@ Dpll.prototype.getClauses = function(txt, varsDict) {
     return clauses;
 };
 
-Dpll.prototype.getPrintableClauses = function(clauses, varsDict) {
-    var clausesLines = [];
-    for (var i = 0; i < clauses.length; i++) {
-        var clauseFields = [];
-        for (var j = 0; j < clauses[i].length; j++) {
-            if (clauses[i][j] < 0) {
-                clauseFields.push('-' + varsDict[-clauses[i][j]]);
-            } else {
-                clauseFields.push(varsDict[clauses[i][j]]);
-            }
-        }
-        clausesLines.push(clauseFields.join(' '));
+Dpll.prototype.getPrintableFormula = function(formula) {
+    var clauses = [];
+    for (var c=0; c<formula.length; c++) {
+        clauses.push(formula[c].join(" "));
     }
-    return clausesLines.join('\n');
+
+    return clauses.join("</br>");
 };
 
 Dpll.prototype.getPrintableSol = function(sol, varsDict) {

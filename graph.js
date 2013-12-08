@@ -61,6 +61,24 @@ Graph.prototype._drawEdges = function(edgesIn, source) {
     return edges;
 };
 
+Graph.prototype._showTooltip = function(d) {
+
+    /* Update the tooltip position and value */
+    d3.select("#tooltip")
+      .style("top", event.pageY + "px")
+      .style("left", event.pageX + "px")
+      .select("#value")
+        .html(d.formula);
+
+    /* Show the tooltip */
+    d3.select("#tooltip").classed("hidden", false);
+
+};
+
+Graph.prototype._hideTooltip = function(d) {
+    d3.select("#tooltip").classed("hidden", true);
+}
+
 Graph.prototype._drawNodes = function(nodesIn, source) {
     var me = this;
 
@@ -68,14 +86,16 @@ Graph.prototype._drawNodes = function(nodesIn, source) {
                         .data(nodesIn, function(d) { return d.id || (d.id = ++me.last_id); });
 
     // Normalize for fixed-depth.
-    //nodesIn.forEach(function(d) { d.y = d.depth * 180; });
+    //nodesIn.forEach(function(d) { d.y = d.depth * 100; });
 
     var nodesEnter = nodes.enter()
          .append("svg:g")
          .attr("class", "node")
          .attr("transform", function(d) {
             return "translate(" + source.y0 + "," + source.x0 + ")";
-         });
+         })
+         .on("mouseover", this._showTooltip)
+         .on("mouseout", this._hideTooltip);
 
     nodesEnter.append("svg:circle")
            .attr("r", 4.5)
