@@ -12,21 +12,21 @@ var Graph = function (graph_element) {
                           .projection(function(d) { return [d.y, d.x]; });
 
     this.svg = d3.select(this.graph_element)
-                 .append("svg")
+                 .append("svg:svg")
                      .attr("width", this.width)
                      .attr("height", this.height)
-                 .append("g")
+                 .append("svg:g")
                      .attr("transform", "translate(40,0)");
 
     d3.select(self.frameElement).style("height", this.height + "px");
 };
 
 Graph.prototype._drawEdges = function(edgesIn) {
-    var edges = this.svg.selectAll(".link")
+    var edges = this.svg.selectAll("g.link")
                     .data(edgesIn);
 
     edges.enter()
-         .append("path")
+         .append("svg:path")
          .attr("class", "link")
          .attr("d", this.diagonal);
 
@@ -36,17 +36,17 @@ Graph.prototype._drawEdges = function(edgesIn) {
 };
 
 Graph.prototype._drawNodes = function(nodesIn) {
-    var nodes = this.svg.selectAll(".node")
+    var nodes = this.svg.selectAll("g.node")
                         .data(nodesIn);
 
     nodes.enter()
-         .append("g")
+         .append("svg:g")
          .attr("class", "node")
          .attr("transform", function(d) {
             return "translate(" + d.y + "," + d.x + ")";
          });
 
-    nodes.append("circle")
+    nodes.append("svg:circle")
            .attr("r", 4.5);
 
     nodes.append("text")
