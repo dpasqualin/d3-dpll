@@ -69,6 +69,9 @@
         var dpll = new Dpll(graph);
         var $nextBtn = $('#nextBtn');
         var $solveBtn = $('#solveBtn');
+        var $stepByStep = $('#stepByStep');
+        var $solutionTxt = $('#solutionTxt');
+        var $problemTxt = $('#problemTxt');
 
         function printResult(objRes) {
             var done = objRes[0],
@@ -76,15 +79,16 @@
                 sol = objRes[2];
 
             if (done) {
-    		    $('#solutionTxt').html(dpll.getPrintableSol(sol, varsDict));
+    		    $solutionTxt.html(dpll.getPrintableSol(sol, varsDict));
                 $nextBtn.prop('disabled', true);
                 $solveBtn.prop('disabled', false);
+                $stepByStep.prop('disabled', false);
             }
         };
 
         $('#problemTxt').val('1 2\n-1\n-2');
 
-        $('#stepByStep').change(function() {
+        $stepByStep.change(function() {
             console.log('change');
             var text = $(this).is(':checked') ? 'Start':'Solve';
             console.log(text);
@@ -92,12 +96,13 @@
         });
 
         $solveBtn.click(function() {
-            var step_by_step = $('#stepByStep').is(':checked');
+            var step_by_step = $stepByStep.is(':checked');
             var opts = {'step_by_step': step_by_step};
 
-            $('#solutionTxt').html('');
+            $solutionTxt.html('');
+            $stepByStep.prop('disabled', true);
 
-    		var formula = dpll.getClauses($('#problemTxt').val(), varsDict); // Fills var dict
+    		var formula = dpll.getClauses($problemTxt.val(), varsDict); // Fills var dict
     		var objRes = dpll.solve(formula, {}, opts);
 
             $nextBtn.prop('disabled', false);
