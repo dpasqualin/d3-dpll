@@ -46,15 +46,19 @@ Dpll.prototype._updateGraph = function () {
     if (!this._graph) {
         return;
     }
+    var root = this._tree_root;
 
     // FIXME: The best way would be to add some transitions between graph
     // updates instead of cleaning it all on every change
     this._graph.clean();
-    this._graph.draw(this._tree_root);
+    this._graph.draw(root);
 }
 
 /* Add a node named "name" to node "node" */
 Dpll.prototype._addTreeNode = function(node, name) {
+    if (!node.children)
+        node.children = [];
+
     node.children.push({
         'name': String(name),
         'children': []
@@ -105,9 +109,10 @@ Dpll.prototype.nextStep = function() {
     var formula = this._state[0],
         assignment = this._state[1],
         tree = this._state[2],
-        cur_a = this._state[3];
+        cur_a = this._state[3],
+        tree_root = this._tree_root;
 
-    if (this._hasFinished(tree)) {
+    if (this._hasFinished(tree_root)) {
         return [ true, formula, this._state ];
     }
 
@@ -225,9 +230,9 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
 /* It has finished if every node in the tree has an UNSAT leaf */
 Dpll.prototype._hasFinished = function(tree) {
     var c = tree.children;
-    if (c.length === 1 && (c[0].name === 'UNSAT' || c[0].name === 'SAT')) {
+    if (c !== undefined && c.length === 1 && (c[0].name === 'UNSAT' || c[0].name === 'SAT')) {
         return true;
-    } else if (c.length === 0) {
+    } else if (c === undefined || c.length === 0) {
         return false;
     }
 

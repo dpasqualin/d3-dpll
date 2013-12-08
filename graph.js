@@ -127,12 +127,11 @@ Graph.prototype.clean = function() {
 
 Graph.prototype.draw = function(dataIn) {
 
-    var data = jQuery.extend(true, {}, dataIn);
-
-    var nodes = this.cluster.nodes(data),
+    var nodes = this.cluster.nodes(dataIn),
         edges = this.cluster.links(nodes);
 
-    this._drawEdges(edges, data);
+    this._drawEdges(edges, dataIn);
     this._drawNodes(nodes);
+    console.log(dataIn);
 
 }
