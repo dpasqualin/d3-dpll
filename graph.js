@@ -18,38 +18,62 @@ var Graph = function (graph_element) {
                  .append("svg:g")
                      .attr("transform", "translate(40,0)");
 
+    this.duration = d3.event && d3.event.altKey ? 5000 : 500;
+
     d3.select(self.frameElement).style("height", this.height + "px");
 };
 
-Graph.prototype._drawEdges = function(edgesIn) {
+Graph.prototype._drawEdges = function(edgesIn, source) {
+    var me = this;
+
     var edges = this.svg.selectAll("g.link")
                     .data(edgesIn);
 
     edges.enter()
-         .append("svg:path")
+         .insert("svg:path")
          .attr("class", "link")
+         .attr("d", function(d) {
+             var o = {x: source.x0 || me.height/2, y: source.y0 || 0};
+             return me.diagonal({source: o, target: o})
+         })
+         .transition()
+            .duration(this.duration)
+            .attr("d", this.diagonal)
+
+
+    /* Transition links to their new position. */
+    edges.transition()
+         .duration(this.duration)
          .attr("d", this.diagonal);
 
-    edges.exit().remove();
+    /* Transition exiting nodes to the parent's new position. */
+    edges.exit().transition()
+         .duration(this.duration)
+         .attr("d", function(d) {
+            var o = {x: source.x, y: source.y};
+            return me.diagonal({source: o, target: o});
+         })
+         .remove();
 
     return edges;
 };
 
 Graph.prototype._drawNodes = function(nodesIn) {
+
     var nodes = this.svg.selectAll("g.node")
                         .data(nodesIn);
 
-    nodes.enter()
+    var nodesEnter = nodes.enter()
          .append("svg:g")
          .attr("class", "node")
          .attr("transform", function(d) {
             return "translate(" + d.y + "," + d.x + ")";
          });
 
-    nodes.append("svg:circle")
+    nodesEnter.append("svg:circle")
            .attr("r", 4.5);
 
-    nodes.append("text")
+    nodesEnter.append("text")
            .attr("dx", function(d) { return d.children ? -8 : 8; })
            .attr("dy", 3)
            .style("text-anchor", function(d) {
@@ -57,7 +81,36 @@ Graph.prototype._drawNodes = function(nodesIn) {
             })
            .text(function(d) { return d.name; });
 
-    nodes.exit().remove();
+    /* Transition nodes to their new position. */
+    var nodesUpdate = nodes.transition()
+            .duration(this.duration)
+            .attr("transform", function(d) {
+                return "translate(" + d.y + "," + d.x + ")";
+             });
+
+    nodesUpdate.select("circle")
+        .attr("r", 4.5)
+        .style("fill", function(d) { return d.children ? "lightsteelblue" : "#fff"; });
+
+    nodesUpdate.select("text")
+        .style("fill-opacity", 1);
+
+    // Transition exiting nodes to the parent's new position.
+    var nodesExit = nodes.exit().transition()
+        .duration(this.duration)
+        .remove();
+
+    nodesExit.select("circle")
+        .attr("r", 0);
+
+    nodesExit.select("text")
+        .style("fill-opacity", 0);
+
+    /* Stash the old positions for transition. */
+    nodesIn.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+    });
 
     return nodes;
 }
@@ -79,7 +132,7 @@ Graph.prototype.draw = function(dataIn) {
     var nodes = this.cluster.nodes(data),
         edges = this.cluster.links(nodes);
 
-    this._drawEdges(edges);
+    this._drawEdges(edges, data);
     this._drawNodes(nodes);
 
 }
