@@ -229,9 +229,13 @@ Dpll.prototype._hasFinished = function(tree) {
     if (this._finished) return true;
     var c = tree.children;
 
-    if (c !== undefined && c.length === 1 && (c[0].name === 'UNSAT' || c[0].name === 'SAT')) {
-        this._finished = true;
-        return true;
+    if (c !== undefined && c.length === 1) {
+        if (c[0].name === 'UNSAT') {
+            return true;
+        } else if (c[0].name === 'SAT') {
+            this._finished = true;
+            return true;
+        }
     } else if (c === undefined || c.length === 0) {
         return false;
     }
