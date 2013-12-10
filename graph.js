@@ -34,7 +34,9 @@ Graph.prototype._drawEdges = function(edgesIn, source) {
 
     edges.enter()
          .insert("svg:path", "g")
-         .attr("class", "link")
+         .attr("class", function(d) {
+             return d.target.sat_path === true? 'linksat' : 'link';
+         })
          .attr("d", function(d) {
              var o = {x: source.x0 || me.height/2, y: source.y0 || 0};
              return me.diagonal({source: o, target: o})
@@ -47,7 +49,10 @@ Graph.prototype._drawEdges = function(edgesIn, source) {
     /* Transition links to their new position. */
     edges.transition()
          .duration(this.duration)
-         .attr("d", this.diagonal);
+         .attr("d", this.diagonal)
+         .attr("class", function(d) {
+             return d.target.sat_path === true? 'linksat' : 'link';
+        });
 
     /* Transition exiting nodes to the parent's new position. */
     edges.exit().transition()
