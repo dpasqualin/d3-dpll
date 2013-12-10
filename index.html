@@ -35,7 +35,7 @@
 	    <p>
         <button id="solveBtn" type="button" class="btn btn-default">Start</button>
         <button id="nextBtn" type="button" class="btn btn-default">Next Step</button>
-        <span class="label label-info">You can press "n" to advance to the next step</span>
+        <span class="label label-info">Tip: press "n" to advance to the next step</span>
 	    <p>
 	    <strong>Solution:</strong>
 	    <p>
@@ -49,13 +49,21 @@
         <p><span id="value"></span></p>
     </div>
 
+    <div class="container">
+        <span class="label label-info">This program uses
+            <a href="http://d3js.org/">d3js</a> to draw the graph and is based on the
+            <a href="http://code.google.com/p/js-games/">js-games</a> DPLL implementation
+        </span>
+    </div>
+
     <div id="footer">
         <div class="container">
-            <p class="text-muted">Copyleft Diego Pasqualin 2013</p>
+            <p class="text-muted">Copyleft 2013 www.inf.ufpr.br/dpasqualin - Some Rights Reserved</p>
         </div>
     </div>
 
 	<script src="jquery-1.10.1.min.js"></script>
+	<script src="dist/js/bootstrap.min.js"></script>
 	<script src="d3.v3.min.js" charset="utf-8"></script>
 	<script src="dpll.js"></script>
 	<script src="dpll.js"></script>
@@ -86,7 +94,7 @@
             }
         };
 
-        $('#problemTxt').val('1 2\n-1\n-2');
+        $problemTxt.val('1 2\n-1\n-2');
 
         $stepByStep.change(function() {
             console.log('change');
