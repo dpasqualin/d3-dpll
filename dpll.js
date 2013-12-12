@@ -69,10 +69,6 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     });
 }
 
-Dpll.prototype.nextStep = function() {
-    this._next_step = true;
-}
-
 Dpll.prototype._recDPLL = function(f, a, t) {
     var i, na, v, ret, cur_a;
     f = this._applyAssignment(f, a);
