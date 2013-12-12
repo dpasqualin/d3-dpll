@@ -152,6 +152,8 @@ Dpll.prototype.solve = function(formula, assignment, config) {
 
     this._tree_root = tree;
     this._finished = false;
+    this._is_sat = false;
+    this._printed = false;
 
     if (config) {
         for (var c in config) {
