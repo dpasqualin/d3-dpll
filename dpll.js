@@ -141,10 +141,14 @@ Dpll.prototype._backtrack = function() {
                     delete this._state[1][String(new_a[a])];
                 }
             }
+
             this._state[1][cur_a] = true;
 
             /* Set new tree root node */
             this._state[2] = grandson;
+
+            /* Restore original formula */
+            this._state[0] = this._copyFormula(this._formula);
 
             return;
         }
@@ -191,6 +195,18 @@ Dpll.prototype.nextStep = function() {
     return [ false, undefined, this._state ];
 }
 
+Dpll.prototype._copyFormula = function(formula) {
+    var f = [];
+    for (var i=0; i<formula.length; i++) {
+        var c = [];
+        for (var j=0; j<formula[i].length; j++) {
+            c.push(formula[i][j]);
+        }
+        f.push(c);
+    }
+    return f;
+};
+
 /* This is the function that must be call in order to solve a formula */
 Dpll.prototype.solve = function(formula, assignment, config) {
 
@@ -200,6 +216,9 @@ Dpll.prototype.solve = function(formula, assignment, config) {
         'formula': this.getPrintableFormula(formula)
     };
 
+    /* Save a copy of the formula for backtracking purpose */
+
+    this._formula = this._copyFormula(formula);
     this._tree_root = tree;
     this._finished = false;
     this._is_sat = false;
