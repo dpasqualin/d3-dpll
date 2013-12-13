@@ -4,6 +4,8 @@ var Dpll = function(graph, config) {
     this._graph = graph;
     this._next_step = true;
     this._finished = false;
+    this._is_sat = false;
+    this._printed = false; // FIX nextStep logic and discard this var
     this._config = config || {
         step_by_step: false
     };
@@ -67,10 +69,6 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     });
 }
 
-Dpll.prototype.nextStep = function() {
-    this._next_step = true;
-}
-
 Dpll.prototype._recDPLL = function(f, a, t) {
     var i, na, v, ret, cur_a;
     f = this._applyAssignment(f, a);
@@ -107,6 +105,15 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     this._state = [f, na, t.children[0], cur_a];
 }
 
+Dpll.prototype._printSatLinks = function(node) {
+    if (node === undefined) {
+        this._updateGraph();
+        return;
+    }
+    node.sat_path = true;
+    this._printSatLinks(node.parent);
+};
+
 Dpll.prototype.nextStep = function() {
 
     var formula = this._state[0],
@@ -116,6 +123,10 @@ Dpll.prototype.nextStep = function() {
         tree_root = this._tree_root;
 
     if (this._hasFinished(tree_root)) {
+        if (this._is_sat && !this._printed) {
+            this._printed = true;
+            this._printSatLinks(tree.children[0]);
+        }
         return [ true, formula, this._state ];
     }
 
@@ -141,6 +152,8 @@ Dpll.prototype.solve = function(formula, assignment, config) {
 
     this._tree_root = tree;
     this._finished = false;
+    this._is_sat = false;
+    this._printed = false;
 
     if (config) {
         for (var c in config) {
@@ -234,6 +247,7 @@ Dpll.prototype._hasFinished = function(tree) {
             return true;
         } else if (c[0].name === 'SAT') {
             this._finished = true;
+            this._is_sat = true;
             return true;
         }
     } else if (c === undefined || c.length === 0) {

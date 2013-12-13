@@ -14,6 +14,12 @@
   stroke-width: 1.5px;
 }
 
+.linksat {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
 #tooltip {
   position: absolute;
   width: 200px;

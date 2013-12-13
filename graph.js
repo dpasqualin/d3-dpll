@@ -27,7 +27,7 @@ var Graph = function (graph_element) {
 Graph.prototype._drawEdges = function(edgesIn, source) {
     var me = this;
 
-    var edges = this.svg.selectAll("path.link")
+    var edges = this.svg.selectAll("path")
                     .data(edgesIn, function(d) {
                         return d.target.id;
                     });
@@ -42,6 +42,10 @@ Graph.prototype._drawEdges = function(edgesIn, source) {
          .transition()
             .duration(this.duration)
             .attr("d", this.diagonal)
+
+    edges.attr("class", function(d) {
+             return d.target.sat_path === true? 'linksat' : 'link';
+          });
 
 
     /* Transition links to their new position. */
@@ -151,8 +155,8 @@ Graph.prototype._drawNodes = function(nodesIn, source) {
 
 Graph.prototype.draw = function(dataIn) {
 
-    var nodes = this.cluster.nodes(dataIn).reverse(),
-        edges = this.cluster.links(nodes).reverse();
+    var nodes = this.cluster.nodes(dataIn),
+        edges = this.cluster.links(nodes);
 
     this._drawNodes(nodes, dataIn);
     this._drawEdges(edges, dataIn);
