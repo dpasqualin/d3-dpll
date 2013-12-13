@@ -80,7 +80,7 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     for (i = 0; i < f.length; i++) {
         if (f[i].length === 0) {
             this._addTreeNode(a, f, t, 'UNSAT');
-            this._state = [false, {}, t, null];
+            this._state = [false, a, t, null];
             return;
         } else if (f[i].length === 1) {
             na = this._cloneAssignment(a);
@@ -114,6 +114,47 @@ Dpll.prototype._printSatLinks = function(node) {
     this._printSatLinks(node.parent);
 };
 
+Dpll.prototype._backtrack = function() {
+    var tree = this._state[2];
+
+    for (var i=0; tree.children && i<tree.children.length; i++) {
+        var grandson = tree.children[i];
+        if (grandson.name !== 'UNSAT' && !grandson.children) {
+
+            /* Set current assignment */
+            var cur_a = parseInt(grandson.name);
+            this._state[3] = cur_a;
+
+            /* Set new assignment.
+             * Delete current assignment complement and all assignments made
+             * after it */
+
+            /* TODO: put the assignment in an array instead of an object.
+             * With an object the only way we can assign a value an still
+             * have a backtrack is with the lexicograph order assignment. */
+            var new_a = [];
+            for (var a in this._state[i]) {
+                new_a.push(parseInt(a));
+            }
+            for (var a=0; a<new_a.length; a++) {
+                if (Math.abs(new_a[a]) >= Math.abs(cur_a)) {
+                    delete this._state[1][String(new_a[a])];
+                }
+            }
+            this._state[1][cur_a] = true;
+
+            /* Set new tree root node */
+            this._state[2] = grandson;
+
+            return;
+        }
+    }
+
+    /* Adjust recursion parameter */
+    this._state[2] = tree.parent;
+    this._backtrack();
+}
+
 Dpll.prototype.nextStep = function() {
 
     var formula = this._state[0],
@@ -131,8 +172,17 @@ Dpll.prototype.nextStep = function() {
     }
 
     if (formula === false) {
-        delete assignment[cur_a];
-        assignment[-cur_a] = true;
+
+        /* At this point cur_a will not be known, we have to perform a
+         * backtrack locking for a branch not searched yet */
+
+        this._backtrack();
+
+        /* Reload state info */
+        formula = this._state[0];
+        assignment = this._state[1];
+        tree = this._state[2];
+
         this._recDPLL(formula, assignment, tree);
     } else {
         this._recDPLL(formula, assignment, tree);
