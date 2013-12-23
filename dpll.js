@@ -1,5 +1,14 @@
 "use strict";
 
+/*
+    This class solves a formula.
+    It can receives two parameters as options:
+    graph: an instance of the Graph class
+    config: a hash with configurations, which might be:
+        + step_by_step: boolean to define whether the algorythm should
+        wait for a signal to continue to next step (executint
+        Dpll.next()) or should execute all at once.
+ */
 var Dpll = function(graph, config) {
     this._graph = graph;
     this._next_step = true;
@@ -11,6 +20,12 @@ var Dpll = function(graph, config) {
     };
 };
 
+/*
+    Apply an assignment to a clause and return the latter simplified.
+    c: a clause
+    a: an assignment
+    returns: a clause after applying the assignment
+*/
 Dpll.prototype._simplifyClause = function(c, a) {
 		var nc, i;
 		nc = [];
@@ -24,6 +39,12 @@ Dpll.prototype._simplifyClause = function(c, a) {
 		return nc;
 };
 
+/*
+    Apply a given assignment to a formula
+    f: a formula
+    a: an assignment
+    returns: the formula after applying the assignment
+*/
 Dpll.prototype._applyAssignment = function(f, a) {
 		var nf, i, nc;
 		nf = [];
@@ -36,6 +57,11 @@ Dpll.prototype._applyAssignment = function(f, a) {
 		return nf;
 };
 
+/*
+    Clone an object that represents an assignment
+    a: an assignment
+    returns: the assignment cloned into a new object
+*/
 Dpll.prototype._cloneAssignment = function(a) {
 		var na, v;
 		na = {};
@@ -45,6 +71,9 @@ Dpll.prototype._cloneAssignment = function(a) {
 		return na;
 };
 
+/*
+    Update the graph, if the user configured one
+*/
 Dpll.prototype._updateGraph = function () {
     if (!this._graph) {
         return;
@@ -54,12 +83,20 @@ Dpll.prototype._updateGraph = function () {
     this._graph.draw(root);
 }
 
-/* Add a node named "name" to node "node" */
+/*
+    Add a new node to the tree used by the Graph class to draw the search
+    tree.
+    assignment: an assignment
+    formula: a formula
+    node: the root node where the new node will be added as a child node
+    name: the name of the new node
+*/
 Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     if (!node.children)
         node.children = [];
 
-    /* Ensure the current assignment has been applied to the formula */
+    /* Apply current assignment to the formula, this formula will be shown
+     * as a popup on the Graph */
     var new_f = this._applyAssignment(formula, assignment)
 
     node.children.push({
@@ -69,6 +106,16 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     });
 }
 
+/*
+    Do the magic.
+    f: a formula to be checked for satisfiability
+    a: an initial assignment (can be an empty hash)
+    t: the search tree root node
+    returns: an array containing tree objects:
+        boolean: true -> SAT, false -> UNSAT
+        a: the assignment the implied on the SAT case
+        t: the search tree
+*/
 Dpll.prototype._recDPLL = function(f, a, t) {
     var i, na, v, ret, cur_a;
     f = this._applyAssignment(f, a);
@@ -105,15 +152,26 @@ Dpll.prototype._recDPLL = function(f, a, t) {
     this._state = [f, na, t.children[0], cur_a];
 }
 
-Dpll.prototype._printSatLinks = function(node) {
+/*
+    Receives a SAT node from the search tree and set the path to the root as
+    a sat path. This will imply in a path with a different color in the
+    Graph.
+    node: the sat node on the search tree
+*/
+Dpll.prototype._setSatPath = function(node) {
     if (node === undefined) {
         this._updateGraph();
         return;
     }
     node.sat_path = true;
-    this._printSatLinks(node.parent);
+    this._setSatPath(node.parent);
 };
 
+/*
+    When the DPLL reaches an UNSAT path but there is a path which were not
+    explored yet, we have to backtrack to this path. At this point only the
+    cronological backtrack is implemented.
+*/
 Dpll.prototype._backtrack = function() {
     var tree = this._state[2];
 
@@ -148,7 +206,7 @@ Dpll.prototype._backtrack = function() {
             this._state[2] = grandson;
 
             /* Restore original formula */
-            this._state[0] = this._copyFormula(this._formula);
+            this._state[0] = this._cloneFormula(this._formula);
 
             return;
         }
@@ -159,6 +217,12 @@ Dpll.prototype._backtrack = function() {
     this._backtrack();
 }
 
+/*
+    Advances to the next step on the DPLL execution.
+    This function is intented to be triggered by the web interface. It
+    causes the algorithym to evaluate on more variable of the assignment and
+    draw the result on the Graph.
+*/
 Dpll.prototype.nextStep = function() {
 
     var formula = this._state[0],
@@ -170,7 +234,7 @@ Dpll.prototype.nextStep = function() {
     if (this._hasFinished(tree_root)) {
         if (this._is_sat && !this._printed) {
             this._printed = true;
-            this._printSatLinks(tree.children[0]);
+            this._setSatPath(tree.children[0]);
         }
         return [ true, formula, this._state ];
     }
@@ -195,7 +259,12 @@ Dpll.prototype.nextStep = function() {
     return [ false, undefined, this._state ];
 }
 
-Dpll.prototype._copyFormula = function(formula) {
+/*
+    Clone a formula.
+    formula: the formula to be cloned
+    returns: a copy of the formula
+*/
+Dpll.prototype._cloneFormula = function(formula) {
     var f = [];
     for (var i=0; i<formula.length; i++) {
         var c = [];
@@ -207,7 +276,13 @@ Dpll.prototype._copyFormula = function(formula) {
     return f;
 };
 
-/* This is the function that must be call in order to solve a formula */
+/*
+    This is the function that must be call in order to solve a formula.
+    formula: the dimacs formula
+    assignment: an initial assignment, can be an empty object
+    config: you can change the default behavior of this class by setting new
+        values through this argument
+*/
 Dpll.prototype.solve = function(formula, assignment, config) {
 
     var tree = {
@@ -218,7 +293,7 @@ Dpll.prototype.solve = function(formula, assignment, config) {
 
     /* Save a copy of the formula for backtracking purpose */
 
-    this._formula = this._copyFormula(formula);
+    this._formula = this._cloneFormula(formula);
     this._tree_root = tree;
     this._finished = false;
     this._is_sat = false;
@@ -243,6 +318,14 @@ Dpll.prototype.solve = function(formula, assignment, config) {
 
 }
 
+/*
+    Receives a string containing a set of clauses separeted using new lines
+    (\n) and return an object containing the formula.
+    txt: the string containing the formula
+    varsDict: an empty hash which will contain the association between the
+        variable names typed by the user and the variable names that will be
+        used internally by the DPLL.
+*/
 Dpll.prototype.getClauses = function(txt, varsDict) {
     var clausesLines = txt.split('\n');
     var clauses = [];
@@ -281,6 +364,12 @@ Dpll.prototype.getClauses = function(txt, varsDict) {
     return clauses;
 };
 
+/*
+    Transform the object formula into a string to be printed on the popup on
+    the Graph.
+    formula: the formula
+    returns: a string with the clauses separated by a html new line tag
+*/
 Dpll.prototype.getPrintableFormula = function(formula) {
     var clauses = [];
     for (var c=0; c<formula.length; c++) {
@@ -290,6 +379,13 @@ Dpll.prototype.getPrintableFormula = function(formula) {
     return clauses.join("</br>");
 };
 
+/*
+    Return a string with the variables which satisfied the formula, or the
+    string 'UNSATISFIABLE' if the formula is unsat.
+    sol: the last assignment made by the dpll execution
+    varsDict: the hash created by Dpll.getClauses()
+    returns: a string representing the result
+*/
 Dpll.prototype.getPrintableSol = function(sol, varsDict) {
     if (!sol[0]) {
         return 'UNSATISFIABLE';
@@ -306,7 +402,10 @@ Dpll.prototype.getPrintableSol = function(sol, varsDict) {
     return txt;
 };
 
-/* It has finished if every node in the tree has an UNSAT leaf */
+/*
+    Check whether the execution of the DPLL has already finished.
+    It has finished if all nodes are UNSAT or one node was marked as SAT.
+*/
 Dpll.prototype._hasFinished = function(tree) {
     if (this._finished) return true;
     var c = tree.children;
@@ -325,5 +424,3 @@ Dpll.prototype._hasFinished = function(tree) {
 
     return this._hasFinished(tree.children[0]) && this._hasFinished(tree.children[1]);
 }
-
-
