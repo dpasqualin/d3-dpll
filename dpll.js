@@ -118,8 +118,13 @@ Dpll.prototype.getClauses = function(txt, varsDict) {
 */
 Dpll.prototype.getPrintableFormula = function(formula) {
     var clauses = [];
-    for (var c=0; c<formula.length; c++) {
-        clauses.push(formula[c].join(" "));
+    var f = this._cloneFormula(formula);
+    for (var c=0; c<f.length; c++) {
+        if (f[c].length === 0) {
+            clauses.push("[unsat clause]");
+        } else {
+            clauses.push(f[c].join(" "));
+        }
     }
 
     return clauses.join("</br>");
@@ -271,17 +276,31 @@ Dpll.prototype._updateGraph = function () {
     name: the name of the new node
 */
 Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
+    var a = this._cloneAssignment(assignment);
+    var strFormula = '';
+
     if (!node.children)
         node.children = [];
 
-    /* Apply current assignment to the formula, this formula will be shown
-     * as a popup on the Graph */
-    var new_f = this._applyAssignment(formula, assignment)
+    /* Will might be simulating an assignment, so let's make sure the new
+     * node was added to the assignment. This is used when we add a new node
+     * that we know it's gonna be UNSAT, so it's not even tested by the
+     * algorithym, but we want to show this node on the Graph */
+    if (name !== 'UNSAT' && name !== 'SAT') {
+        delete a[String(-parseInt(name))];
+        a[name] = true;
+
+        /* Apply current assignment to the formula, this formula will be shown
+         * as a popup on the Graph */
+        var new_f = this._applyAssignment(formula, a)
+
+        strFormula = this.getPrintableFormula(new_f)
+    }
 
     node.children.push({
         'name': String(name),
         'children': [],
-        'formula': this.getPrintableFormula(new_f)
+        'formula': strFormula
     });
 }
 
@@ -318,6 +337,7 @@ Dpll.prototype._recDPLL = function(f, a, t) {
              * its complementary will be unsat */
             this._addTreeNode(na, f, t, -cur_a);
             this._addTreeNode(na, f, t.children[1], 'UNSAT');
+
             this._state = [f, na, t.children[0], cur_a];
             return;
         }
