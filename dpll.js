@@ -21,6 +21,185 @@ var Dpll = function(graph, config) {
 };
 
 /*
+    This is the function that must be call in order to solve a formula.
+    formula: the dimacs formula
+    assignment: an initial assignment, can be an empty object
+    config: you can change the default behavior of this class by setting new
+        values through this argument
+*/
+Dpll.prototype.solve = function(formula, assignment, config) {
+
+    var tree = {
+        'name': 'Root',
+        'children': [],
+        'formula': this.getPrintableFormula(formula)
+    };
+
+    /* Save a copy of the formula for backtracking purpose */
+
+    this._formula = this._cloneFormula(formula);
+    this._tree_root = tree;
+    this._finished = false;
+    this._is_sat = false;
+    this._printed = false;
+
+    if (config) {
+        for (var c in config) {
+            this._config[c] = config[c];
+        }
+    }
+
+    this._recDPLL(formula, assignment, tree);
+    this._updateGraph();
+    if (!this._config.step_by_step) {
+        while (this.nextStep()[0] === false) {
+            // do nothing
+        }
+        return this.nextStep();
+    } else {
+        return [false, false, {}];
+    }
+
+}
+
+/*
+    Receives a string containing a set of clauses separeted using new lines
+
+    (\n) and return an object containing the formula.
+    txt: the string containing the formula
+    varsDict: an empty hash which will contain the association between the
+        variable names typed by the user and the variable names that will be
+        used internally by the DPLL.
+
+*/
+Dpll.prototype.getClauses = function(txt, varsDict) {
+    var clausesLines = txt.split('\n');
+    var clauses = [];
+    var varCounter = 1;
+    var revVarsDict = {}; // var name -> var num
+    for (var i = 0; i < clausesLines.length; i++) {
+        if (!clausesLines[i]) {
+            continue;
+        }
+        var newClause = [];
+        var clauseFields = clausesLines[i].split(' ');
+        for (var j = 0; j < clauseFields.length; j++) {
+            var neg = false;
+            if (!clauseFields[j]) {
+                continue;
+            }
+            if (clauseFields[j][0] === '-') {
+                clauseFields[j] = clauseFields[j].substring(1);
+                neg = true;
+            }
+            if (!(clauseFields[j] in revVarsDict)) {
+                revVarsDict[clauseFields[j]] = varCounter;
+                varsDict[varCounter] = clauseFields[j];
+                varCounter++;
+            }
+            if (neg) {
+                newClause.push(-revVarsDict[clauseFields[j]]);
+            } else {
+                newClause.push(revVarsDict[clauseFields[j]]);
+            }
+        }
+        if (newClause.length !== 0) {
+            clauses.push(newClause);
+        }
+    }
+    return clauses;
+};
+
+/*
+    Transform the object formula into a string to be printed on the popup on
+    the Graph.
+    formula: the formula
+    returns: a string with the clauses separated by a html new line tag
+*/
+Dpll.prototype.getPrintableFormula = function(formula) {
+    var clauses = [];
+    for (var c=0; c<formula.length; c++) {
+        clauses.push(formula[c].join(" "));
+    }
+
+    return clauses.join("</br>");
+};
+
+/*
+
+    Return a string with the variables which satisfied the formula, or the
+    string 'UNSATISFIABLE' if the formula is unsat.
+    sol: the last assignment made by the dpll execution
+
+    varsDict: the hash created by Dpll.getClauses()
+    returns: a string representing the result
+
+*/
+Dpll.prototype.getPrintableSol = function(sol, varsDict) {
+    if (!sol[0]) {
+        return 'UNSATISFIABLE';
+    }
+    var txt = 'SATISFIABLE\n';
+    for (var v in sol[1]) {
+        if (v < 0) {
+            txt += '-' + varsDict[-v];
+        } else {
+            txt += varsDict[v];
+        }
+        txt += ' ';
+    }
+    return txt;
+};
+
+/*
+    Advances to the next step on the DPLL execution.
+    This function is intented to be triggered by the web interface. It
+    causes the algorithym to evaluate on more variable of the assignment and
+    draw the result on the Graph.
+*/
+Dpll.prototype.nextStep = function() {
+
+    var formula = this._state[0],
+        assignment = this._state[1],
+        tree = this._state[2],
+        cur_a = this._state[3],
+        tree_root = this._tree_root;
+
+    if (this._hasFinished(tree_root)) {
+        if (this._is_sat && !this._printed) {
+            this._printed = true;
+            this._setSatPath(tree.children[0]);
+        }
+        return [ true, formula, this._state ];
+    }
+
+    if (formula === false) {
+
+        /* At this point cur_a will not be known, we have to perform a
+
+         * backtrack locking for a branch not searched yet */
+
+        this._backtrack();
+
+        /* Reload state info */
+        formula = this._state[0];
+        assignment = this._state[1];
+        tree = this._state[2];
+
+        this._recDPLL(formula, assignment, tree);
+    } else {
+        this._recDPLL(formula, assignment, tree);
+    }
+    this._updateGraph();
+    return [ false, undefined, this._state ];
+}
+
+
+/* ****************************************************************************
+ * PRIVATE METHODS
+ * ***************************************************************************/
+
+/*
     Apply an assignment to a clause and return the latter simplified.
     c: a clause
     a: an assignment
@@ -218,48 +397,6 @@ Dpll.prototype._backtrack = function() {
 }
 
 /*
-    Advances to the next step on the DPLL execution.
-    This function is intented to be triggered by the web interface. It
-    causes the algorithym to evaluate on more variable of the assignment and
-    draw the result on the Graph.
-*/
-Dpll.prototype.nextStep = function() {
-
-    var formula = this._state[0],
-        assignment = this._state[1],
-        tree = this._state[2],
-        cur_a = this._state[3],
-        tree_root = this._tree_root;
-
-    if (this._hasFinished(tree_root)) {
-        if (this._is_sat && !this._printed) {
-            this._printed = true;
-            this._setSatPath(tree.children[0]);
-        }
-        return [ true, formula, this._state ];
-    }
-
-    if (formula === false) {
-
-        /* At this point cur_a will not be known, we have to perform a
-         * backtrack locking for a branch not searched yet */
-
-        this._backtrack();
-
-        /* Reload state info */
-        formula = this._state[0];
-        assignment = this._state[1];
-        tree = this._state[2];
-
-        this._recDPLL(formula, assignment, tree);
-    } else {
-        this._recDPLL(formula, assignment, tree);
-    }
-    this._updateGraph();
-    return [ false, undefined, this._state ];
-}
-
-/*
     Clone a formula.
     formula: the formula to be cloned
     returns: a copy of the formula
@@ -274,132 +411,6 @@ Dpll.prototype._cloneFormula = function(formula) {
         f.push(c);
     }
     return f;
-};
-
-/*
-    This is the function that must be call in order to solve a formula.
-    formula: the dimacs formula
-    assignment: an initial assignment, can be an empty object
-    config: you can change the default behavior of this class by setting new
-        values through this argument
-*/
-Dpll.prototype.solve = function(formula, assignment, config) {
-
-    var tree = {
-        'name': 'Root',
-        'children': [],
-        'formula': this.getPrintableFormula(formula)
-    };
-
-    /* Save a copy of the formula for backtracking purpose */
-
-    this._formula = this._cloneFormula(formula);
-    this._tree_root = tree;
-    this._finished = false;
-    this._is_sat = false;
-    this._printed = false;
-
-    if (config) {
-        for (var c in config) {
-            this._config[c] = config[c];
-        }
-    }
-
-    this._recDPLL(formula, assignment, tree);
-    this._updateGraph();
-    if (!this._config.step_by_step) {
-        while (this.nextStep()[0] === false) {
-            // do nothing
-        }
-        return this.nextStep();
-    } else {
-        return [false, false, {}];
-    }
-
-}
-
-/*
-    Receives a string containing a set of clauses separeted using new lines
-    (\n) and return an object containing the formula.
-    txt: the string containing the formula
-    varsDict: an empty hash which will contain the association between the
-        variable names typed by the user and the variable names that will be
-        used internally by the DPLL.
-*/
-Dpll.prototype.getClauses = function(txt, varsDict) {
-    var clausesLines = txt.split('\n');
-    var clauses = [];
-    var varCounter = 1;
-    var revVarsDict = {}; // var name -> var num
-    for (var i = 0; i < clausesLines.length; i++) {
-        if (!clausesLines[i]) {
-            continue;
-        }
-        var newClause = [];
-        var clauseFields = clausesLines[i].split(' ');
-        for (var j = 0; j < clauseFields.length; j++) {
-            var neg = false;
-            if (!clauseFields[j]) {
-                continue;
-            }
-            if (clauseFields[j][0] === '-') {
-                clauseFields[j] = clauseFields[j].substring(1);
-                neg = true;
-            }
-            if (!(clauseFields[j] in revVarsDict)) {
-                revVarsDict[clauseFields[j]] = varCounter;
-                varsDict[varCounter] = clauseFields[j];
-                varCounter++;
-            }
-            if (neg) {
-                newClause.push(-revVarsDict[clauseFields[j]]);
-            } else {
-                newClause.push(revVarsDict[clauseFields[j]]);
-            }
-        }
-        if (newClause.length !== 0) {
-            clauses.push(newClause);
-        }
-    }
-    return clauses;
-};
-
-/*
-    Transform the object formula into a string to be printed on the popup on
-    the Graph.
-    formula: the formula
-    returns: a string with the clauses separated by a html new line tag
-*/
-Dpll.prototype.getPrintableFormula = function(formula) {
-    var clauses = [];
-    for (var c=0; c<formula.length; c++) {
-        clauses.push(formula[c].join(" "));
-    }
-
-    return clauses.join("</br>");
-};
-
-/*
-    Return a string with the variables which satisfied the formula, or the
-    string 'UNSATISFIABLE' if the formula is unsat.
-    sol: the last assignment made by the dpll execution
-    varsDict: the hash created by Dpll.getClauses()
-    returns: a string representing the result
-*/
-Dpll.prototype.getPrintableSol = function(sol, varsDict) {
-    if (!sol[0]) {
-        return 'UNSATISFIABLE';
-    }
-    var txt = 'SATISFIABLE\n';
-    for (var v in sol[1]) {
-        if (v < 0) {
-            txt += '-' + varsDict[-v];
-        } else {
-            txt += varsDict[v];
-        }
-        txt += ' ';
-    }
-    return txt;
 };
 
 /*
