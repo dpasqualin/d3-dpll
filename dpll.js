@@ -36,6 +36,7 @@ Dpll.prototype.solve = function(formulaStr, assignment, config) {
 
     var tree = {
         'name': 'Root',
+        'literal': 'Root',
         'children': [],
         'formula': this.getPrintableFormula(formula)
     };
@@ -73,7 +74,7 @@ Dpll.prototype.solve = function(formulaStr, assignment, config) {
     (\n) and return an object containing the formula.
     txt: the string containing the formula
     varsDict: an empty hash which will contain the association between the
-        variable names typed by the user and the variable names that will be
+        variable literals typed by the user and the variable literals that will be
         used internally by the DPLL.
 
 */
@@ -81,7 +82,7 @@ Dpll.prototype.getClauses = function(txt, varsDict) {
     var clausesLines = txt.split('\n');
     var clauses = [];
     var varCounter = 1;
-    var revVarsDict = {}; // var name -> var num
+    var revVarsDict = {}; // var literal -> var num
     for (var i = 0; i < clausesLines.length; i++) {
         if (!clausesLines[i]) {
             continue;
@@ -112,6 +113,11 @@ Dpll.prototype.getClauses = function(txt, varsDict) {
             clauses.push(newClause);
         }
     }
+
+    /* Add SAT and UNSAT on hash to make it easy to print var names on Graph */
+    varsDict['SAT'] = 'SAT';
+    varsDict['UNSAT'] = 'UNSAT';
+
     return clauses;
 };
 
@@ -130,13 +136,24 @@ Dpll.prototype.getPrintableFormula = function(formula) {
         } else {
             var vars = "";
             for (var v=0; v<f[c].length; v++) {
-                vars += this._varsDict[f[c][v]] + " ";
+                var variable = this._getPrintableVar(f[c][v]);
+                vars += variable + " ";
             }
             clauses.push(vars.trim());
         }
     }
 
     return clauses.join("</br>");
+};
+
+/*
+    Return a string representing the variable, with or without the negation
+    symbol '-'.
+    v: the variable
+    returns: the user representation for v, negated or not
+*/
+Dpll.prototype._getPrintableVar = function(v) {
+    return v<0? '-' + this._varsDict[-v] : this._varsDict[v];
 };
 
 /*
@@ -155,14 +172,9 @@ Dpll.prototype.getPrintableSol = function(sol) {
     }
     var txt = 'SATISFIABLE\n';
     for (var v in sol[1]) {
-        if (v < 0) {
-            txt += '-' + this._varsDict[-v];
-        } else {
-            txt += this._varsDict[v];
-        }
-        txt += ' ';
+        txt += this._getPrintableVar(v) + ' ';
     }
-    return txt;
+    return txt.trim();
 };
 
 /*
@@ -282,9 +294,9 @@ Dpll.prototype._updateGraph = function () {
     assignment: an assignment
     formula: a formula
     node: the root node where the new node will be added as a child node
-    name: the name of the new node
+    literal: the literal of the new node
 */
-Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
+Dpll.prototype._addTreeNode = function(assignment, formula, node, literal) {
     var a = this._cloneAssignment(assignment);
     var strFormula = '';
 
@@ -295,9 +307,9 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
      * node was added to the assignment. This is used when we add a new node
      * that we know it's gonna be UNSAT, so it's not even tested by the
      * algorithym, but we want to show this node on the Graph */
-    if (name !== 'UNSAT' && name !== 'SAT') {
-        delete a[String(-parseInt(name))];
-        a[name] = true;
+    if (literal !== 'UNSAT' && literal !== 'SAT') {
+        delete a[String(-parseInt(literal))];
+        a[literal] = true;
 
         /* Apply current assignment to the formula, this formula will be shown
          * as a popup on the Graph */
@@ -307,7 +319,8 @@ Dpll.prototype._addTreeNode = function(assignment, formula, node, name) {
     }
 
     node.children.push({
-        'name': String(name),
+        'name': this._getPrintableVar(literal),
+        'literal': String(literal),
         'children': [],
         'formula': strFormula
     });
@@ -385,10 +398,10 @@ Dpll.prototype._backtrack = function() {
 
     for (var i=0; tree.children && i<tree.children.length; i++) {
         var grandson = tree.children[i];
-        if (grandson.name !== 'UNSAT' && !grandson.children) {
+        if (grandson.literal !== 'UNSAT' && !grandson.children) {
 
             /* Set current assignment */
-            var cur_a = parseInt(grandson.name);
+            var cur_a = parseInt(grandson.literal);
             this._state[3] = cur_a;
 
             /* Set new assignment.
@@ -451,9 +464,9 @@ Dpll.prototype._hasFinished = function(tree) {
     var c = tree.children;
 
     if (c !== undefined && c.length === 1) {
-        if (c[0].name === 'UNSAT') {
+        if (c[0].literal === 'UNSAT') {
             return true;
-        } else if (c[0].name === 'SAT') {
+        } else if (c[0].literal === 'SAT') {
             this._finished = true;
             this._is_sat = true;
             return true;
