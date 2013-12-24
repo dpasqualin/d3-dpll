@@ -128,7 +128,11 @@ Dpll.prototype.getPrintableFormula = function(formula) {
         if (f[c].length === 0) {
             clauses.push("[unsat clause]");
         } else {
-            clauses.push(f[c].join(" "));
+            var vars = "";
+            for (var v=0; v<f[c].length; v++) {
+                vars += this._varsDict[f[c][v]] + " ";
+            }
+            clauses.push(vars.trim());
         }
     }
 
