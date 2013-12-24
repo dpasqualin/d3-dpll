@@ -15,6 +15,7 @@ var Dpll = function(graph, config) {
     this._finished = false;
     this._is_sat = false;
     this._printed = false; // FIX nextStep logic and discard this var
+    this._varsDict = {};
     this._config = config || {
         step_by_step: false
     };
@@ -27,7 +28,11 @@ var Dpll = function(graph, config) {
     config: you can change the default behavior of this class by setting new
         values through this argument
 */
-Dpll.prototype.solve = function(formula, assignment, config) {
+Dpll.prototype.solve = function(formulaStr, assignment, config) {
+
+    this._varsDict = {};
+
+    var formula = this.getClauses(formulaStr, this._varsDict);
 
     var tree = {
         'name': 'Root',
@@ -140,16 +145,16 @@ Dpll.prototype.getPrintableFormula = function(formula) {
     returns: a string representing the result
 
 */
-Dpll.prototype.getPrintableSol = function(sol, varsDict) {
+Dpll.prototype.getPrintableSol = function(sol) {
     if (!sol[0]) {
         return 'UNSATISFIABLE';
     }
     var txt = 'SATISFIABLE\n';
     for (var v in sol[1]) {
         if (v < 0) {
-            txt += '-' + varsDict[-v];
+            txt += '-' + this._varsDict[-v];
         } else {
-            txt += varsDict[v];
+            txt += this._varsDict[v];
         }
         txt += ' ';
     }

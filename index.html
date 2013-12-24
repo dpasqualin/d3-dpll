@@ -72,7 +72,6 @@
 	<script>
 
 	$(document).ready(function() {
-		var varsDict = {}; // Var number -> Var name
         var graph = new Graph('#graph');
         var dpll = new Dpll(graph);
         var $nextBtn = $('#nextBtn');
@@ -87,7 +86,7 @@
                 sol = objRes[2];
 
             if (done) {
-    		    $solutionTxt.html(dpll.getPrintableSol(sol, varsDict));
+    		    $solutionTxt.html(dpll.getPrintableSol(sol));
                 $nextBtn.prop('disabled', true);
                 $solveBtn.prop('disabled', false);
                 $stepByStep.prop('disabled', false);
@@ -110,8 +109,8 @@
             $solutionTxt.html('');
             $stepByStep.prop('disabled', true);
 
-    		var formula = dpll.getClauses($problemTxt.val(), varsDict); // Fills var dict
-    		var objRes = dpll.solve(formula, {}, opts);
+    		var formulaStr = $problemTxt.val();
+    		var objRes = dpll.solve(formulaStr, {}, opts);
 
             $nextBtn.prop('disabled', false);
             $solveBtn.prop('disabled', true);
