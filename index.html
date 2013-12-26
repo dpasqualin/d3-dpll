@@ -36,7 +36,12 @@
         </div>
         <div class="checkbox">
           <label>
-            <input id="stepByStep" type="checkbox" checked="true"> Step by Step
+            <input id="stepByStep" type="checkbox" checked="true">
+            <span class="mytooltip" data-toggle="tooltip" title="When
+            checked, run the algorithm step by step, what virtually means
+            that you'll need to press 'n' on your keyboard or the 'Next Step'
+            button in order to proceed to the next variable valuation, until the
+            execution is finished.">Step by Step</span>
           </label>
         </div>
 	    <p>
@@ -86,6 +91,8 @@
         var $stepByStep = $('#stepByStep');
         var $solutionTxt = $('#solutionTxt');
         var $problemTxt = $('#problemTxt');
+
+        $('span.mytooltip').tooltip();
 
         function printResult(objRes) {
             var done = objRes[0],
