@@ -123,6 +123,10 @@
             $solutionTxt.html('');
             $stepByStep.prop('disabled', true);
 
+            $('html, body').animate({
+                scrollTop: $solveBtn.offset().top
+            }, 500);
+
     		var formulaStr = $problemTxt.val();
     		var objRes = dpll.solve(formulaStr, {}, opts);
 
